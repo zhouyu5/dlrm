@@ -212,9 +212,9 @@ class BinaryCriteoUtils:
             row: List[str],
         ) -> Tuple[List[int], List[int], int]:
             label = -1
-            dense = [float(row[i] or "0") for i in range(0, 0 + INT_FEATURE_COUNT)]
+            dense = [float(row[i]) for i in range(0, 0 + INT_FEATURE_COUNT)]
             sparse = [
-                int(float(row[i] or "0"))
+                int(row[i])
                 for i in range(
                     0 + INT_FEATURE_COUNT, 0 + INT_FEATURE_COUNT + CAT_FEATURE_COUNT
                 )
@@ -224,9 +224,9 @@ class BinaryCriteoUtils:
         def row_mapper(row: List[str]) -> Tuple[List[int], List[int], int]:
             # Missing values are mapped to zero for both dense and sparse features
             label = int(row[0] or "0")
-            dense = [float(row[i] or "0") for i in range(1, 1 + INT_FEATURE_COUNT)]
+            dense = [float(row[i]) for i in range(1, 1 + INT_FEATURE_COUNT)]
             sparse = [
-                int(float(row[i] or "0"))
+                int(row[i])
                 for i in range(
                     1 + INT_FEATURE_COUNT, 1 + INT_FEATURE_COUNT + CAT_FEATURE_COUNT
                 )

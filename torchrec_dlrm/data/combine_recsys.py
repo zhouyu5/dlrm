@@ -14,6 +14,7 @@ from typing import List
 import pandas as pd
 import glob
 from tqdm import tqdm
+from sklearn import preprocessing
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -37,7 +38,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_installed', is_test=False):
+def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_installed'):
     # a. RowId(f_0)
     # b. Date(f_1)
     # c. Categorical features: 31 (f_2 to f_32)
@@ -46,31 +47,33 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
     # f. Labels(is_clicked, is_installed)
     all_files = glob.glob(data_dir)
 
-    if label_name == 'is_installed':
-        drop_label_name = 'is_clicked'
-    else:
-        drop_label_name = 'is_installed'
-
     # dense: 38, sparse: 40
     save_cols = [f'f_{i}' for i in range(42, 80)] + [f'f_{i}' for i in range(2, 42)]
-    if not is_test:
-        save_cols = [label_name] + save_cols
-    else:
-        save_cols = ['f_0'] + save_cols
+    save_cols = [label_name] + save_cols
 
     df = pd.concat((pd.read_csv(f, sep='\t') for f in all_files), ignore_index=True)
 
-    if not is_test:
-        df = df.drop(columns=[drop_label_name])
-
+    # process time: range, 45--67
     df['f_1'] = df['f_1'] - 45
     
     if preprocess:
-        category_feat_names = [f'f_{i}' for i in range(2,33)]
+        # cat feature
+        category_feat_names = [f'f_{i}' for i in range(2, 33)]
         for feat in tqdm(category_feat_names, desc='Categorical Feature Processing'):
             df[feat] = df[feat].astype('category').cat.codes
+        for feat in ['f_31', 'f_32']:
+            df[feat] = df[feat] + 1
+        # dense feature
+        dense_feat_names = [f'f_{i}' for i in range(42, 80)]
+        min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+        df[dense_feat_names] = pd.DataFrame(
+            min_max_scaler.fit_transform(df[dense_feat_names]), 
+            columns=dense_feat_names,
+            index=df.index
+        )
+        df = df.fillna(0)
 
-    for i in df['f_1'].unique():
+    for i in sorted(df['f_1'].unique()):
         print(f'processing day {i}')
         df_temp = df[df['f_1'] == i]
         df_temp = df_temp[save_cols]
@@ -97,17 +100,17 @@ def main(argv: List[str]) -> None:
     os.system(f'mkdir -p {output_dir}')
 
     train_data_dir = f'{input_dir}/train/*.csv'
-    get_df_from_filepath(train_data_dir, output_dir, label_name='is_installed', is_test=False)
+    get_df_from_filepath(train_data_dir, output_dir, label_name='is_installed')
 
     # test_data_dir = f'{input_dir}/test/*.csv'
-    # get_df_from_filepath(test_data_dir, output_dir, is_test=True)
+    # get_df_from_filepath(test_data_dir, output_dir)
     
 
 if __name__ == "__main__":
     main(sys.argv[1:])
 
 
-# python data/combine_recsys.py --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' --output_dir '/home/vmagent/app/data/recsys2023_process/raw'
+# 
     
     
 
