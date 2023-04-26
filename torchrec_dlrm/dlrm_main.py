@@ -42,7 +42,7 @@ from lr_scheduler import LRPolicyScheduler  # noqa F811
 from multi_hot import Multihot, RestartableMap  # noqa F811
 from data.recsys import DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES
 
-TRAIN_PIPELINE_STAGES = 3  # Number of stages in TrainPipelineSparseDist.
+TRAIN_PIPELINE_STAGES = 2  # Number of stages in TrainPipelineSparseDist.
 
 
 class InteractionType(Enum):
@@ -326,10 +326,13 @@ def _evaluate(
             total=len(eval_dataloader),
             disable=False,
         )
+
+    eval_loss = []
     with torch.no_grad():
         while True:
             try:
                 _loss, logits, labels = pipeline.progress(iterator)
+                eval_loss.append(_loss)
                 preds = torch.sigmoid(logits)
                 auroc(preds, labels)
                 if is_rank_zero:
@@ -338,10 +341,13 @@ def _evaluate(
                 break
 
     auroc_result = auroc.compute().item()
+    eval_loss = sum(eval_loss) / len(eval_loss)
     num_samples = torch.tensor(sum(map(len, auroc.target)), device=device)
     dist.reduce(num_samples, 0, op=dist.ReduceOp.SUM)
 
     if is_rank_zero:
+        print('=================================================')
+        print(f"loss over {stage} set: {eval_loss}.")
         print(f"AUROC over {stage} set: {auroc_result}.")
         print(f"Number of {stage} samples: {num_samples}")
     return auroc_result

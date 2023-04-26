@@ -13,7 +13,7 @@ import sys
 from typing import List
 import pandas as pd
 import glob
-import tqdm
+from tqdm import tqdm
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -37,7 +37,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def get_df_from_filepath(data_dir, output_dir, preprocess=False, label_name='is_installed', is_test=False):
+def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_installed', is_test=False):
     # a. RowId(f_0)
     # b. Date(f_1)
     # c. Categorical features: 31 (f_2 to f_32)
@@ -71,6 +71,7 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=False, label_name='is_
             df[feat] = df[feat].astype('category').cat.codes
 
     for i in df['f_1'].unique():
+        print(f'processing day {i}')
         df_temp = df[df['f_1'] == i]
         df_temp = df_temp[save_cols]
         save_path = f'{output_dir}/day_{i}'
@@ -98,8 +99,8 @@ def main(argv: List[str]) -> None:
     train_data_dir = f'{input_dir}/train/*.csv'
     get_df_from_filepath(train_data_dir, output_dir, label_name='is_installed', is_test=False)
 
-    test_data_dir = f'{input_dir}/test/*.csv'
-    get_df_from_filepath(test_data_dir, output_dir, is_test=True)
+    # test_data_dir = f'{input_dir}/test/*.csv'
+    # get_df_from_filepath(test_data_dir, output_dir, is_test=True)
     
 
 if __name__ == "__main__":

@@ -13,8 +13,6 @@ torchrun \
     --nnodes=$WORLD_SIZE \
     --nproc_per_node=1 \
     --node_rank 0 \
-    --master_addr=localhost \
-    --master_port=23900 \
     dlrm_main.py \
     --embedding_dim 128 \
     --dense_arch_layer_sizes 512,256,128 \
@@ -22,7 +20,7 @@ torchrun \
     --synthetic_multi_hot_criteo_path $MULTIHOT_PREPROCESSED_DATASET \
     --num_embeddings_per_feature 137,6,634,7,5168,2,7,8,4,25,27,330,20,5802,11,50,902,20,56,35,25,5,5,4,3,3,3,3,3,3,5,2,2,2,2,2,2,2,2,2 \
     --validation_freq_within_epoch $((TOTAL_TRAINING_SAMPLES / (GLOBAL_BATCH_SIZE * 20))) \
-    --epochs 10 \
+    --epochs 1 \
     --pin_memory \
     --mmap_mode \
     --batch_size $((GLOBAL_BATCH_SIZE / WORLD_SIZE)) \
