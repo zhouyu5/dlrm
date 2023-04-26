@@ -60,9 +60,7 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
         # cat feature
         category_feat_names = [f'f_{i}' for i in range(2, 33)]
         for feat in tqdm(category_feat_names, desc='Categorical Feature Processing'):
-            df[feat] = df[feat].astype('category').cat.codes
-        for feat in ['f_31', 'f_32']:
-            df[feat] = df[feat] + 1
+            df[feat] = df[feat].fillna(-1).astype('category').cat.codes
         # dense feature
         dense_feat_names = [f'f_{i}' for i in range(42, 80)]
         min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
