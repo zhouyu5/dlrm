@@ -18,7 +18,6 @@ from pyre_extensions import none_throws
 from torch import distributed as dist
 from torch.utils.data import DataLoader
 from torchrec import EmbeddingBagCollection
-from torchrec.datasets.criteo import DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES
 from torchrec.distributed import TrainPipelineSparseDist
 from torchrec.distributed.comm import get_local_size
 from torchrec.distributed.model_parallel import (
@@ -36,29 +35,12 @@ from torchrec.optim.keyed import CombinedOptimizer, KeyedOptimizerWrapper
 from torchrec.optim.optimizers import in_backward_optimizer_filter
 from tqdm import tqdm
 
-# OSS import
-try:
-    # pyre-ignore[21]
-    # @manual=//ai_codesign/benchmarks/dlrm/torchrec_dlrm/data:dlrm_dataloader
-    from data.dlrm_dataloader import get_dataloader
 
-    # pyre-ignore[21]
-    # @manual=//ai_codesign/benchmarks/dlrm/torchrec_dlrm:lr_scheduler
-    from lr_scheduler import LRPolicyScheduler
 
-    # pyre-ignore[21]
-    # @manual=//ai_codesign/benchmarks/dlrm/torchrec_dlrm:multi_hot
-    from multi_hot import Multihot, RestartableMap
-except ImportError:
-    pass
-
-# internal import
-try:
-    from .data.dlrm_dataloader import get_dataloader  # noqa F811
-    from .lr_scheduler import LRPolicyScheduler  # noqa F811
-    from .multi_hot import Multihot, RestartableMap  # noqa F811
-except ImportError:
-    pass
+from data.dlrm_dataloader import get_dataloader  # noqa F811
+from lr_scheduler import LRPolicyScheduler  # noqa F811
+from multi_hot import Multihot, RestartableMap  # noqa F811
+from data.recsys import DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES
 
 TRAIN_PIPELINE_STAGES = 3  # Number of stages in TrainPipelineSparseDist.
 
@@ -547,6 +529,7 @@ def main(argv: List[str]) -> None:
     if torch.cuda.is_available():
         device: torch.device = torch.device(f"cuda:{rank}")
         backend = "nccl"
+        print(f'========================================= you are using device: {device}')
         torch.cuda.set_device(device)
     else:
         device: torch.device = torch.device("cpu")

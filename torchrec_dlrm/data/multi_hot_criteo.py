@@ -12,7 +12,7 @@ import torch
 from iopath.common.file_io import PathManager, PathManagerFactory
 from pyre_extensions import none_throws
 from torch.utils.data import IterableDataset
-from torchrec.datasets.criteo import (
+from data.recsys import (
     CAT_FEATURE_COUNT,
     DEFAULT_CAT_NAMES,
 )

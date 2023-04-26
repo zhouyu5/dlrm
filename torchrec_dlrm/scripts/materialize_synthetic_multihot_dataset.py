@@ -13,7 +13,8 @@ import sys
 import numpy as np
 import torch
 from torch import distributed as dist, nn
-from torchrec.datasets.criteo import DAYS
+
+DAYS = 22
 
 p = pathlib.Path(__file__).absolute().parents[1].resolve()
 sys.path.append(os.fspath(p))

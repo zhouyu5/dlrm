@@ -10,7 +10,7 @@ from typing import List
 
 from torch import distributed as dist
 from torch.utils.data import DataLoader
-from torchrec.datasets.criteo import (
+from data.recsys import (
     CAT_FEATURE_COUNT,
     DAYS,
     DEFAULT_CAT_NAMES,
