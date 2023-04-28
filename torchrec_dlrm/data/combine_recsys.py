@@ -63,9 +63,13 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
             df[feat] = df[feat].fillna(-1).astype('category').cat.codes
         # dense feature
         dense_feat_names = [f'f_{i}' for i in range(42, 80)]
-        min_max_scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+        # method1: min-max
+        scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+        # method2: standard
+        # scaler = preprocessing.StandardScaler()
+
         df[dense_feat_names] = pd.DataFrame(
-            min_max_scaler.fit_transform(df[dense_feat_names]), 
+            scaler.fit_transform(df[dense_feat_names]), 
             columns=dense_feat_names,
             index=df.index
         )
