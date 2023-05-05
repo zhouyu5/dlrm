@@ -76,6 +76,11 @@ def main(argv: List[str]) -> None:
     )
     print("Done processing.")
 
+    for i in range(DAYS):
+        ori_path = f'{output_dir}/day_{i}_sparse_contig_freq.npy'
+        new_path = f'{output_dir}/day_{i}_sparse.npy'
+        print(f'Renaming {ori_path} to {new_path}')
+        os.system(f'mv {ori_path} {new_path}')
 
 if __name__ == "__main__":
     main(sys.argv[1:])

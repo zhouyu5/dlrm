@@ -41,17 +41,6 @@ python data/contiguous_preproc_recsys.py \
    || exit
 
 
-date
-days=22
-temp_days=`expr $days - 1`
-for i in `seq 0 $temp_days`
-do
-   name="$step_2_output_dir/day_$i""_sparse_contig_freq.npy"
-   renamed="$step_2_output_dir/day_$i""_sparse.npy"
-   echo "Renaming $name to $renamed"
-   mv "$name" "$renamed"
-done
-
 # Step 3. Shuffle the dataset's samples in days 0 through 22. (~20hrs)
 # Day 23's samples are not shuffled and will be used for the validation set and test set.
 mkdir -p "$step_3_output_dir"
