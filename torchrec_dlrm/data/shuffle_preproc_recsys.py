@@ -14,11 +14,7 @@ from multiprocessing import Manager, Process
 from typing import List
 
 import numpy as np
-from recsys import BinaryCriteoUtils
-
-DAYS = 22
-COLUMNS = 79  # 38 dense, 40 sparse, 1 label, in that order
-INT_COLUMNS = 38
+from recsys import BinaryCriteoUtils, DAYS
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:

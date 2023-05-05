@@ -25,6 +25,9 @@ from torchrec.datasets.utils import (
 )
 from torchrec.sparse.jagged_tensor import KeyedJaggedTensor
 
+COLUMNS = 79  # 38 dense, 40 sparse, 1 label, in that order
+INT_COLUMNS = 38
+
 FREQUENCY_THRESHOLD = 3
 INT_FEATURE_COUNT = 38
 CAT_FEATURE_COUNT = 40

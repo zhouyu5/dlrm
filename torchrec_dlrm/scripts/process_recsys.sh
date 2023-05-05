@@ -4,7 +4,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-days=$4
 
 # Input directory containing the raw Criteo 1TB Click Logs dataset files in tsv format.
 # The 24 dataset filenames in the directory should be day_{0..23} with no .tsv extension.
@@ -29,7 +28,6 @@ mkdir -p "$step_1_output_dir"
 date
 python data/npy_preproc_recsys.py --input_dir "$raw_tsv_criteo_files_dir" \
    --output_dir "$step_1_output_dir" \
-   --total_days $days \
    || exit
 
 # Step 2. Convert all sparse indices in day_{0..23}_sparse.npy to contiguous indices and save the output.
@@ -40,13 +38,11 @@ python data/contiguous_preproc_recsys.py \
    --input_dir "$step_1_output_dir" \
    --output_dir "$step_2_output_dir" \
    --frequency_threshold 0 \
-   --total_days $days \
    || exit
 
 
 date
-
-
+days=22
 temp_days=`expr $days - 1`
 for i in `seq 0 $temp_days`
 do

@@ -12,7 +12,7 @@ import os
 import sys
 from typing import List
 
-from recsys import BinaryCriteoUtils
+from recsys import BinaryCriteoUtils, DAYS
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -40,13 +40,6 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         default="criteo_1tb",
         help="dataset for experiment, current support criteo_1tb, criteo_kaggle",
     )
-    parser.add_argument(
-        "--total_days",
-        type=int,
-        choices=[22, 23],
-        default=22,
-        help="total days for recsys 2023 dataset",
-    )
     return parser.parse_args(argv)
 
 
@@ -65,7 +58,7 @@ def main(argv: List[str]) -> None:
     args = parse_args(argv)
     input_dir = args.input_dir
     output_dir = args.output_dir
-    total_days = args.total_days
+    total_days = DAYS
 
     if args.dataset_name == "criteo_1tb":
         in_files_l = [f"day_{i}" for i in range(total_days)]
