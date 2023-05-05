@@ -56,6 +56,10 @@ done
 # Day 23's samples are not shuffled and will be used for the validation set and test set.
 mkdir -p "$step_3_output_dir"
 date
-python data/shuffle_preproc_recsys.py --input_dir_labels_and_dense "$step_1_output_dir" --input_dir_sparse "$step_2_output_dir" --output_dir_shuffled "$step_3_output_dir" --random_seed 0 || exit
+python data/shuffle_preproc_recsys.py \
+   --input_dir_labels_and_dense "$step_1_output_dir" \
+   --input_dir_sparse "$step_2_output_dir" \
+   --output_dir_shuffled "$step_3_output_dir" \
+   || exit
 date
 

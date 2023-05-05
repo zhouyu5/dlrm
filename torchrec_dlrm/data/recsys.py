@@ -538,6 +538,7 @@ class BinaryCriteoUtils:
         sparse_columns: int = CAT_FEATURE_COUNT,
         path_manager_key: str = PATH_MANAGER_KEY,
         random_seed: int = 0,
+        is_shuffle=False
     ) -> None:
         """
         Shuffle the dataset. Expects the files to be in .npy format and the data
@@ -564,6 +565,23 @@ class BinaryCriteoUtils:
             path_manager_key (str): Path manager key used to load from different filesystems.
             random_seed (int): Random seed used for the random.shuffle operator.
         """
+
+
+        # Directly copy over the last day's files since they will be used for validation and testing.
+        if not is_shuffle:
+            for day in range(days):
+                for (part, input_dir) in [
+                    ("sparse", input_dir_sparse),
+                    ("dense", input_dir_labels_and_dense),
+                    ("labels", input_dir_labels_and_dense),
+                ]:
+                    path_to_original = os.path.join(input_dir, f"day_{day}_{part}.npy")
+                    val_train_path = os.path.join(
+                        output_dir_shuffled, f"day_{day}_{part}.npy"
+                    )
+                    shutil.copyfile(path_to_original, val_train_path)
+                    print(f"Copying over {path_to_original} to {val_train_path}")
+            return
 
         total_rows = sum(rows_per_day.values())
         columns = int_columns + sparse_columns + 1  # add 1 for label column
