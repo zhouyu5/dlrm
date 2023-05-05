@@ -346,10 +346,10 @@ def _evaluate(
     dist.reduce(num_samples, 0, op=dist.ReduceOp.SUM)
 
     if is_rank_zero:
-        print('=================================================')
         print(f"loss over {stage} set: {eval_loss}.")
         print(f"AUROC over {stage} set: {auroc_result}.")
         print(f"Number of {stage} samples: {num_samples}")
+        print('=================================================')
     return auroc_result
 
 

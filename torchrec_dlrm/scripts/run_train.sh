@@ -2,7 +2,6 @@
 set -x
 
 export CUDA_VISIBLE_DEVICES=1
-
 export MULTIHOT_PREPROCESSED_DATASET='/home/vmagent/app/data/recsys2023_process/multihot'
 export GLOBAL_BATCH_SIZE=128
 export WORLD_SIZE=1
@@ -14,10 +13,9 @@ torchrun \
     --rdzv_id=100 --rdzv_backend=c10d --rdzv_endpoint=localhost:29400 \
     --nnodes=$WORLD_SIZE \
     --nproc_per_node=1 \
-    --node_rank 0 \
     dlrm_main.py \
-    --embedding_dim 64 \
-    --dense_arch_layer_sizes 512,256,128,64 \
+    --embedding_dim 128 \
+    --dense_arch_layer_sizes 512,256,128 \
     --over_arch_layer_sizes 1024,512,256,1 \
     --synthetic_multi_hot_criteo_path $MULTIHOT_PREPROCESSED_DATASET \
     --num_embeddings_per_feature $num_embeddings_per_feature \

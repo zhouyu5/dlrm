@@ -25,13 +25,15 @@ from torchrec.datasets.utils import (
 )
 from torchrec.sparse.jagged_tensor import KeyedJaggedTensor
 
-COLUMNS = 79  # 38 dense, 40 sparse, 1 label, in that order
-INT_COLUMNS = 38
-
-FREQUENCY_THRESHOLD = 3
+###################### change ###################### 
 INT_FEATURE_COUNT = 38
 CAT_FEATURE_COUNT = 40
-DAYS = 22   ############################################ to be refined
+# CAT_FEATURE_COUNT = 78
+DAYS = 22
+
+
+###################### constant ###################### 
+FREQUENCY_THRESHOLD = 3
 DEFAULT_LABEL_NAME = "label"
 DEFAULT_INT_NAMES: List[str] = [f"int_{idx}" for idx in range(INT_FEATURE_COUNT)]
 DEFAULT_CAT_NAMES: List[str] = [f"cat_{idx}" for idx in range(CAT_FEATURE_COUNT)]
@@ -40,13 +42,13 @@ DEFAULT_COLUMN_NAMES: List[str] = [
     *DEFAULT_INT_NAMES,
     *DEFAULT_CAT_NAMES,
 ]
-TOTAL_TRAINING_SAMPLES = 3387880 ############################################ to be refined
-
 COLUMN_TYPE_CASTERS: List[Callable[[Union[int, str]], Union[int, str]]] = [
     lambda val: safe_cast(val, int, 0),
     *(lambda val: safe_cast(val, int, 0) for _ in range(INT_FEATURE_COUNT)),
     *(lambda val: safe_cast(val, str, "") for _ in range(CAT_FEATURE_COUNT)),
 ]
+TOTAL_TRAINING_SAMPLES = 3387880 
+
 
 
 def _default_row_mapper(example: List[str]) -> Dict[str, Union[int, str]]:
