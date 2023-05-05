@@ -32,7 +32,7 @@ CAT_FEATURE_COUNT = 78
 DAYS = 22
 TRAIN_START, TRAIN_END = 0, 20
 VAL_START, VAL_END = 21, 21
-TEST_START, TEST_END = 22, 22
+TEST_START, TEST_END = 21, 21
 
 ###################### constant ###################### 
 FREQUENCY_THRESHOLD = 3

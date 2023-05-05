@@ -289,6 +289,12 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         action="store_true",
         help="Print the sharding plan used for each embedding table.",
     )
+    parser.add_argument(
+        "--tasks",
+        type=str,
+        default="train,val",
+        help="The tasks of the scripts",
+    )
     return parser.parse_args(argv)
 
 
@@ -466,22 +472,25 @@ def train_val_test(
     )
 
     for epoch in range(args.epochs):
-        _train(
-            pipeline,
-            train_dataloader,
-            val_dataloader,
-            epoch,
-            lr_scheduler,
-            args.print_lr,
-            args.validation_freq_within_epoch,
-            args.limit_train_batches,
-            args.limit_val_batches,
-        )
-        val_auroc = _evaluate(args.limit_val_batches, pipeline, val_dataloader, "val")
-        results.val_aurocs.append(val_auroc)
+        if "train" in args.tasks:
+            _train(
+                pipeline,
+                train_dataloader,
+                val_dataloader,
+                epoch,
+                lr_scheduler,
+                args.print_lr,
+                args.validation_freq_within_epoch,
+                args.limit_train_batches,
+                args.limit_val_batches,
+            )
+        if "val" in args.tasks:
+            val_auroc = _evaluate(args.limit_val_batches, pipeline, val_dataloader, "val")
+            results.val_aurocs.append(val_auroc)
 
-    test_auroc = _evaluate(args.limit_test_batches, pipeline, test_dataloader, "test")
-    results.test_auroc = test_auroc
+    if "test" in args.tasks:
+        test_auroc = _evaluate(args.limit_test_batches, pipeline, test_dataloader, "test")
+        results.test_auroc = test_auroc
 
     return results
 
