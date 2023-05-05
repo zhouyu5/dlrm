@@ -72,6 +72,22 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
         for feat in tqdm(category_feat_names, desc='Categorical Feature Processing'):
             df[feat] = df[feat].fillna(-1).astype('category').cat.codes
         
+        # dense feature Discretize
+        is_discretize = True
+        if is_discretize:
+            scaler = preprocessing.KBinsDiscretizer(
+                n_bins=10, encode='ordinal', 
+                strategy='uniform',
+                random_state=2023
+            )
+            df[dense_cat_feat_names] = df[dense_feat_names].fillna(0)
+            df[dense_cat_feat_names] = pd.DataFrame(
+                scaler.fit_transform(df[dense_cat_feat_names]), 
+                columns=dense_cat_feat_names,
+                index=df.index
+            )
+            save_cols += dense_cat_feat_names
+
         # process dense feat
         # method1: min-max
         scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
@@ -84,21 +100,7 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
             columns=dense_feat_names,
             index=df.index
         )
-
-        # dense feature Discretize
-        is_discretize = False
-        if is_discretize:
-            scaler = preprocessing.KBinsDiscretizer(
-                n_bins=10, encode='ordinal', 
-                strategy='uniform',
-                random_state=2023
-            )
-            df[dense_cat_feat_names] = pd.DataFrame(
-                scaler.fit_transform(df[dense_feat_names]), 
-                columns=dense_cat_feat_names,
-                index=df.index
-            )
-
+        
         df = df.fillna(0)
 
     for i in sorted(df['f_1'].unique()):

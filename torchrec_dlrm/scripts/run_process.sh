@@ -7,6 +7,9 @@ temp_data_dir='/home/vmagent/app/data/recsys2023_process/temp'
 multihot_data_dir='/home/vmagent/app/data/recsys2023_process/multihot'
 num_embeddings_per_feature='136,5,633,6,5167,1,6,7,3,24,26,329,19,5801,10,49,901,19,55,34,24,4,4,3,2,2,2,2,3,3,4,2,2,2,2,2,2,2,2,2'
 multi_hot_sizes='1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1'
+num_embeddings_per_feature=${num_embeddings_per_feature}',10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10'
+multi_hot_sizes=${multi_hot_sizes}',1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1'
+
 
 # step 1: raw data
 python data/combine_recsys.py \

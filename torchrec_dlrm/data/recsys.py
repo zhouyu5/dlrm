@@ -27,8 +27,8 @@ from torchrec.sparse.jagged_tensor import KeyedJaggedTensor
 
 ###################### change ###################### 
 INT_FEATURE_COUNT = 38
-CAT_FEATURE_COUNT = 40
-# CAT_FEATURE_COUNT = 78
+# CAT_FEATURE_COUNT = 40
+CAT_FEATURE_COUNT = 78
 DAYS = 22
 
 
@@ -219,7 +219,7 @@ class BinaryCriteoUtils:
             label = -1
             dense = [float(row[i]) for i in range(0, 0 + INT_FEATURE_COUNT)]
             sparse = [
-                int(row[i])
+                int(float(row[i]))
                 for i in range(
                     0 + INT_FEATURE_COUNT, 0 + INT_FEATURE_COUNT + CAT_FEATURE_COUNT
                 )
@@ -231,7 +231,7 @@ class BinaryCriteoUtils:
             label = int(row[0] or "0")
             dense = [float(row[i]) for i in range(1, 1 + INT_FEATURE_COUNT)]
             sparse = [
-                int(row[i])
+                int(float(row[i]))
                 for i in range(
                     1 + INT_FEATURE_COUNT, 1 + INT_FEATURE_COUNT + CAT_FEATURE_COUNT
                 )

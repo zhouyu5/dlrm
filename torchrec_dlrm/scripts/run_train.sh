@@ -6,6 +6,7 @@ export MULTIHOT_PREPROCESSED_DATASET='/home/vmagent/app/data/recsys2023_process/
 export GLOBAL_BATCH_SIZE=128
 export WORLD_SIZE=1
 num_embeddings_per_feature='136,5,633,6,5167,1,6,7,3,24,26,329,19,5801,10,49,901,19,55,34,24,4,4,3,2,2,2,2,3,3,4,2,2,2,2,2,2,2,2,2'
+num_embeddings_per_feature=${num_embeddings_per_feature}',10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10'
 learning_rate=0.01
 epochs=10
 
