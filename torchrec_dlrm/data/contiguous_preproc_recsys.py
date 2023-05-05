@@ -16,8 +16,6 @@ from typing import List
 
 from recsys import BinaryCriteoUtils
 
-DAYS = 22
-
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
@@ -42,6 +40,13 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         default=0,
         help="IDs occuring less than this frequency will be remapped to an index of 1. If this value is not set (e.g. 0), no frequency thresholding will be applied.",
     )
+    parser.add_argument(
+        "--total_days",
+        type=int,
+        choices=[22, 23],
+        default=22,
+        help="total days for recsys 2023 dataset",
+    )
     return parser.parse_args(argv)
 
 
@@ -60,11 +65,12 @@ def main(argv: List[str]) -> None:
     args = parse_args(argv)
     input_dir = args.input_dir
     output_dir = args.output_dir
+    total_days = args.total_days
 
     # Look for files that end in "_sparse.npy" since this processing is
     # only applied to sparse data.
 
-    input_files = [os.path.join(input_dir, f"day_{i}_sparse.npy") for i in range(DAYS)]
+    input_files = [os.path.join(input_dir, f"day_{i}_sparse.npy") for i in range(total_days)]
 
     if not input_files:
         raise ValueError(
