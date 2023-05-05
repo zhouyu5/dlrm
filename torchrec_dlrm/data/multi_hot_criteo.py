@@ -113,20 +113,6 @@ class MultiHotCriteoIterDataPipe(IterableDataset):
                     )
                     multi_hot_ids_l.append(multi_hot_ft_ids)
                 self.sparse_arrs.append(multi_hot_ids_l)
-        len_d0 = len(self.dense_arrs[0])
-        second_half_start_index = int(len_d0 // 2 + len_d0 % 2)
-        if stage == "val":
-            self.dense_arrs[0] = self.dense_arrs[0][:second_half_start_index, :]
-            self.labels_arrs[0] = self.labels_arrs[0][:second_half_start_index, :]
-            self.sparse_arrs[0] = [
-                feats[:second_half_start_index, :] for feats in self.sparse_arrs[0]
-            ]
-        elif stage == "test":
-            self.dense_arrs[0] = self.dense_arrs[0][second_half_start_index:, :]
-            self.labels_arrs[0] = self.labels_arrs[0][second_half_start_index:, :]
-            self.sparse_arrs[0] = [
-                feats[second_half_start_index:, :] for feats in self.sparse_arrs[0]
-            ]
         # When mmap_mode is enabled, sparse features are hashed when
         # samples are batched in def __iter__. Otherwise, the dataset has been
         # preloaded with sparse features hashed in the preload stage, here:

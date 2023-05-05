@@ -30,7 +30,9 @@ INT_FEATURE_COUNT = 38
 # CAT_FEATURE_COUNT = 40
 CAT_FEATURE_COUNT = 78
 DAYS = 22
-
+TRAIN_START, TRAIN_END = 0, 20
+VAL_START, VAL_END = 21, 21
+TEST_START, TEST_END = 22, 22
 
 ###################### constant ###################### 
 FREQUENCY_THRESHOLD = 3
@@ -786,16 +788,6 @@ class InMemoryBinaryCriteoIterDataPipe(IterableDataset):
             self.labels_arrs: List[np.ndarray] = [
                 np.load(f, mmap_mode=m) for f in self.labels_paths
             ]
-        len_d0 = len(self.dense_arrs[0])
-        second_half_start_index = int(len_d0 // 2 + len_d0 % 2)
-        if stage == "val":
-            self.dense_arrs[0] = self.dense_arrs[0][:second_half_start_index, :]
-            self.sparse_arrs[0] = self.sparse_arrs[0][:second_half_start_index, :]
-            self.labels_arrs[0] = self.labels_arrs[0][:second_half_start_index, :]
-        elif stage == "test":
-            self.dense_arrs[0] = self.dense_arrs[0][second_half_start_index:, :]
-            self.sparse_arrs[0] = self.sparse_arrs[0][second_half_start_index:, :]
-            self.labels_arrs[0] = self.labels_arrs[0][second_half_start_index:, :]
         # When mmap_mode is enabled, sparse features are hashed when
         # samples are batched in def __iter__. Otherwise, the dataset has been
         # preloaded with sparse features hashed in the preload stage, here:

@@ -15,6 +15,9 @@ from data.recsys import (
     DAYS,
     DEFAULT_CAT_NAMES,
     DEFAULT_INT_NAMES,
+    TRAIN_START, TRAIN_END,
+    VAL_START, VAL_END,
+    TEST_START, TEST_END,
     InMemoryBinaryCriteoIterDataPipe,
 )
 from torchrec.datasets.random import RandomRecDataset
@@ -80,29 +83,25 @@ def _get_in_memory_dataloader(
         sparse_part = "sparse_multi_hot.npz"
         datapipe = MultiHotCriteoIterDataPipe
 
-    if args.dataset_name == "criteo_kaggle":
-        # criteo_kaggle has no validation set, so use 2nd half of training set for now.
-        # Setting stage to "test" will get the 2nd half of the dataset.
-        # Setting root_name to "train" reads from the training set file.
-        (root_name, stage) = ("train", "train") if stage == "train" else ("train", "test")
+    if stage == "train":
         stage_files: List[List[str]] = [
-            [os.path.join(dir_path, f"{root_name}_dense.npy")],
-            [os.path.join(dir_path, f"{root_name}_{sparse_part}")],
-            [os.path.join(dir_path, f"{root_name}_labels.npy")],
+            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in range(TRAIN_START, TRAIN_END+1)],
+            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in range(TRAIN_START, TRAIN_END+1)],
+            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in range(TRAIN_START, TRAIN_END+1)],
         ]
-    # criteo_1tb code path uses below two conditionals
-    elif stage == "train":
+    elif stage == "val":
         stage_files: List[List[str]] = [
-            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in range(DAYS - 1)],
-            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in range(DAYS - 1)],
-            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in range(DAYS - 1)],
+            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in range(VAL_START, VAL_END+1)],
+            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in range(VAL_START, VAL_END+1)],
+            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in range(VAL_START, VAL_END+1)],
         ]
-    elif stage in ["val", "test"]:
+    elif stage == 'test':
         stage_files: List[List[str]] = [
-            [os.path.join(dir_path, f"day_{DAYS-1}_dense.npy")],
-            [os.path.join(dir_path, f"day_{DAYS-1}_{sparse_part}")],
-            [os.path.join(dir_path, f"day_{DAYS-1}_labels.npy")],
+            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in range(TEST_START, TEST_END+1)],
+            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in range(TEST_START, TEST_END+1)],
+            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in range(TEST_START, TEST_END+1)],
         ]
+    
     if stage in ["val", "test"] and args.test_batch_size is not None:
         batch_size = args.test_batch_size
     else:

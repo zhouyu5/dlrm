@@ -42,7 +42,6 @@ from lr_scheduler import LRPolicyScheduler  # noqa F811
 from multi_hot import Multihot, RestartableMap  # noqa F811
 from data.recsys import DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES
 
-TRAIN_PIPELINE_STAGES = 2  # Number of stages in TrainPipelineSparseDist.
 
 
 class InteractionType(Enum):
