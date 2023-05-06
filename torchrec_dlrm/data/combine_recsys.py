@@ -15,6 +15,7 @@ import pandas as pd
 import glob
 from tqdm import tqdm
 from sklearn import preprocessing
+from recsys import IS_DISCRETIZE
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -73,8 +74,7 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
             df[feat] = df[feat].fillna(-1).astype('category').cat.codes
         
         # dense feature Discretize
-        is_discretize = True
-        if is_discretize:
+        if IS_DISCRETIZE:
             scaler = preprocessing.KBinsDiscretizer(
                 n_bins=10, encode='ordinal', 
                 strategy='uniform',
