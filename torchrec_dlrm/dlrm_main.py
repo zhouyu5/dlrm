@@ -42,7 +42,7 @@ from lr_scheduler import LRPolicyScheduler  # noqa F811
 from data.multi_hot import Multihot, RestartableMap  # noqa F811
 from data.recsys import (
     DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES,
-    NUM_EMBEDDINGS_PER_FEAT, MULTI_HOT_SIZES_FOR_TRAIN
+    NUM_EMBEDDINGS_PER_FEAT
 )
 
 
@@ -510,8 +510,6 @@ def main(argv: List[str]) -> None:
     args = parse_args(argv)
     if args.num_embeddings_per_feature is None:
         args.num_embeddings_per_feature = NUM_EMBEDDINGS_PER_FEAT
-    if args.multi_hot_sizes is None:
-        args.multi_hot_sizes = MULTI_HOT_SIZES_FOR_TRAIN
     
     for name, val in vars(args).items():
         try:
