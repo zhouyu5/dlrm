@@ -13,25 +13,11 @@ import sys
 import numpy as np
 import torch
 from torch import distributed as dist, nn
+from recsys import DAYS, NUM_EMBEDDINGS_PER_FEAT, MULTI_HOT_SIZES
+from multi_hot import Multihot
 
-DAYS = 22
-
-p = pathlib.Path(__file__).absolute().parents[1].resolve()
-sys.path.append(os.fspath(p))
-
-# OSS import
-try:
-    # pyre-ignore[21]
-    # @manual=//ai_codesign/benchmarks/dlrm/torchrec_dlrm:multi_hot
-    from multi_hot import Multihot
-except ImportError:
-    pass
-
-# internal import
-try:
-    from .multi_hot import Multihot  # noqa F811
-except ImportError:
-    pass
+# p = pathlib.Path(__file__).absolute().parents[1].resolve()
+# sys.path.append(os.fspath(p))
 
 
 def parse_args() -> argparse.Namespace:
@@ -60,14 +46,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--num_embeddings_per_feature",
         type=str,
-        required=True,
+        default='',
         help="Comma separated max_ind_size per sparse feature. The number of embeddings"
         " in each embedding table. 26 values are expected for the Criteo dataset.",
     )
     parser.add_argument(
         "--multi_hot_sizes",
         type=str,
-        required=True,
+        default='',
         help="Comma separated multihot size per sparse feature. 26 values are expected for the Criteo dataset.",
     )
     parser.add_argument(
@@ -96,6 +82,11 @@ def main() -> None:
     This script takes about 2 hours to run (can be parallelized if needed).
     """
     args = parse_args()
+    if args.num_embeddings_per_feature == '':
+        args.num_embeddings_per_feature = NUM_EMBEDDINGS_PER_FEAT
+    if args.multi_hot_sizes == '':
+        args.multi_hot_sizes = MULTI_HOT_SIZES
+    
     for name, val in vars(args).items():
         try:
             vars(args)[name] = list(map(int, val.split(",")))

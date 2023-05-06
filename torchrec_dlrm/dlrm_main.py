@@ -39,8 +39,11 @@ from tqdm import tqdm
 
 from data.dlrm_dataloader import get_dataloader  # noqa F811
 from lr_scheduler import LRPolicyScheduler  # noqa F811
-from multi_hot import Multihot, RestartableMap  # noqa F811
-from data.recsys import DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES
+from data.multi_hot import Multihot, RestartableMap  # noqa F811
+from data.recsys import (
+    DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES,
+    NUM_EMBEDDINGS_PER_FEAT, MULTI_HOT_SIZES_FOR_TRAIN
+)
 
 
 
@@ -103,13 +106,6 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         choices=["criteo_1t", "criteo_kaggle"],
         default="criteo_1t",
         help="dataset for experiment, current support criteo_1tb, criteo_kaggle",
-    )
-    parser.add_argument(
-        "--num_embeddings",
-        type=int,
-        default=100_000,
-        help="max_ind_size. The number of embeddings in each embedding table. Defaults"
-        " to 100_000 if num_embeddings_per_feature is not supplied.",
     )
     parser.add_argument(
         "--num_embeddings_per_feature",
@@ -512,6 +508,11 @@ def main(argv: List[str]) -> None:
         None.
     """
     args = parse_args(argv)
+    if args.num_embeddings_per_feature is None:
+        args.num_embeddings_per_feature = NUM_EMBEDDINGS_PER_FEAT
+    if args.multi_hot_sizes is None:
+        args.multi_hot_sizes = MULTI_HOT_SIZES_FOR_TRAIN
+    
     for name, val in vars(args).items():
         try:
             vars(args)[name] = list(map(int, val.split(",")))
@@ -524,8 +525,6 @@ def main(argv: List[str]) -> None:
         assert (
             args.num_embeddings_per_feature is not None
             and len(args.multi_hot_sizes) == len(args.num_embeddings_per_feature)
-            or args.num_embeddings_per_feature is None
-            and len(args.multi_hot_sizes) == len(DEFAULT_CAT_NAMES)
         ), "--multi_hot_sizes must be a comma delimited list the same size as the number of embedding tables."
     assert (
         args.in_memory_binary_criteo_path is None
@@ -556,9 +555,6 @@ def main(argv: List[str]) -> None:
         )
     dist.init_process_group(backend=backend)
 
-    if args.num_embeddings_per_feature is not None:
-        args.num_embeddings = None
-
     # Sets default limits for random dataloader iterations when left unspecified.
     if (
         args.in_memory_binary_criteo_path
@@ -578,9 +574,7 @@ def main(argv: List[str]) -> None:
         EmbeddingBagConfig(
             name=f"t_{feature_name}",
             embedding_dim=args.embedding_dim,
-            num_embeddings=none_throws(args.num_embeddings_per_feature)[feature_idx]
-            if args.num_embeddings is None
-            else args.num_embeddings,
+            num_embeddings=none_throws(args.num_embeddings_per_feature)[feature_idx],
             feature_names=[feature_name],
         )
         for feature_idx, feature_name in enumerate(DEFAULT_CAT_NAMES)
