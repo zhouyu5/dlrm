@@ -9,11 +9,17 @@ export in_memory_binary_criteo_path='/home/vmagent/app/data/recsys2023_process/n
 export GLOBAL_BATCH_SIZE=128
 export WORLD_SIZE=1
 learning_rate=0.01
-epochs=10
+epochs=4
 
+
+
+# --interaction_type=dcn \
+# --dcn_num_layers=3 \
+# --dcn_low_rank_dim=512 \
 
 # --in_memory_binary_criteo_path $in_memory_binary_criteo_path \
 # --synthetic_multi_hot_criteo_path $synthetic_multi_hot_criteo_path \
+
 torchrun \
     --rdzv_id=100 --rdzv_backend=c10d --rdzv_endpoint=localhost:29400 \
     --nnodes=$WORLD_SIZE \
@@ -27,9 +33,10 @@ torchrun \
     --pin_memory \
     --mmap_mode \
     --batch_size $((GLOBAL_BATCH_SIZE / WORLD_SIZE)) \
-    --interaction_type=dcn \
-    --dcn_num_layers=3 \
-    --dcn_low_rank_dim=512 \
     --adagrad \
     --learning_rate $learning_rate \
-    --allow_tf32
+    --allow_tf32 \
+    --tasks "train,val" \
+    --interaction_type=dcn \
+    --dcn_num_layers=3 \
+    --dcn_low_rank_dim=256

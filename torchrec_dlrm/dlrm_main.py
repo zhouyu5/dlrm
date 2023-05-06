@@ -167,6 +167,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument(
         "--seed",
         type=int,
+        default=2023,
         help="Random seed for reproducibility.",
     )
     parser.add_argument(
