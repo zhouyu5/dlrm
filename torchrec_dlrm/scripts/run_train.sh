@@ -12,16 +12,17 @@ learning_rate=0.01
 epochs=10
 
 
-    # --in_memory_binary_criteo_path $in_memory_binary_criteo_path \
+# --in_memory_binary_criteo_path $in_memory_binary_criteo_path \
+# --synthetic_multi_hot_criteo_path $synthetic_multi_hot_criteo_path \
 torchrun \
     --rdzv_id=100 --rdzv_backend=c10d --rdzv_endpoint=localhost:29400 \
     --nnodes=$WORLD_SIZE \
     --nproc_per_node=1 \
     dlrm_main.py \
     --embedding_dim 16 \
-    --dense_arch_layer_sizes 128,64,32,16 \
+    --dense_arch_layer_sizes 256,128,64,32,16 \
     --over_arch_layer_sizes 512,256,1 \
-    --synthetic_multi_hot_criteo_path $synthetic_multi_hot_criteo_path \
+    --in_memory_binary_criteo_path $in_memory_binary_criteo_path \
     --epochs $epochs \
     --pin_memory \
     --mmap_mode \
