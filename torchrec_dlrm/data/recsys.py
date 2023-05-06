@@ -35,7 +35,7 @@ VAL_START, VAL_END = 21, 21
 TEST_START, TEST_END = 21, 21
 
 NUM_EMBEDDINGS_PER_FEAT = '136,5,633,6,5167,1,6,7,3,24,26,329,19,5801,10,49,901,19,55,34,24,4,4,3,2,2,2,2,3,3,4,2,2,2,2,2,2,2,2,2,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10,10'
-MULTI_HOT_SIZES = ','.join(map(lambda x: str(int(math.log(x, 2))), NUM_EMBEDDINGS_PER_FEAT.split(',')))
+MULTI_HOT_SIZES = ','.join(map(lambda x: str(max(int(math.log(int(x), 2)), 1)), NUM_EMBEDDINGS_PER_FEAT.split(',')))
 
 
 ###################### constant ###################### 
