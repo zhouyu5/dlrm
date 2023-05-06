@@ -118,9 +118,7 @@ def _get_in_memory_dataloader(
             shuffle_training_set=args.shuffle_training_set,
             shuffle_training_set_random_seed=args.seed,
             mmap_mode=args.mmap_mode,
-            hashes=args.num_embeddings_per_feature
-            if args.num_embeddings is None
-            else ([args.num_embeddings] * CAT_FEATURE_COUNT),
+            hashes=args.num_embeddings_per_feature,
         ),
         batch_size=None,
         pin_memory=args.pin_memory,
