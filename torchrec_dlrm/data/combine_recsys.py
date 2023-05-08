@@ -39,7 +39,26 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
-def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_installed'):
+def get_df_from_path(data_dath):
+    all_files = glob.glob(data_dath)
+    df = pd.concat((pd.read_csv(f, sep='\t') for f in all_files), ignore_index=True)
+    return df
+
+
+def get_all_df(input_dir):
+    train_data_dir = f'{input_dir}/train/*.csv'
+    train_df = get_df_from_path(train_data_dir)
+    
+    test_data_dir = f'{input_dir}/test/*.csv'
+    test_df = get_df_from_path(test_data_dir)
+    test_df['is_clicked'] = test_df['is_installed'] = test_df['f_0']
+
+    df = pd.concat((train_df, test_df), ignore_index=True)
+
+    return df
+
+
+def get_preprocess_df(df, output_dir, preprocess=True, label_name='is_installed'):
     # input format
     # a. RowId(f_0)
     # b. Date(f_1)
@@ -56,10 +75,6 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
     category_feat_names = [f'f_{i}' for i in range(2, 33)]
     # binary feat names
     binary_feat_names = [f'f_{i}' for i in range(33, 42)]
-    
-    # read input
-    all_files = glob.glob(data_dir)
-    df = pd.concat((pd.read_csv(f, sep='\t') for f in all_files), ignore_index=True)
 
     # output format, dense: 38, binary: 9, cat: 31
     save_cols = [label_name]
@@ -131,11 +146,10 @@ def main(argv: List[str]) -> None:
     output_dir = args.output_dir
     os.system(f'mkdir -p {output_dir}')
 
-    train_data_dir = f'{input_dir}/train/*.csv'
-    get_df_from_filepath(train_data_dir, output_dir, label_name='is_installed')
+    df = get_all_df(input_dir)
+    get_preprocess_df(df, output_dir, label_name='is_installed')
 
-    # test_data_dir = f'{input_dir}/test/*.csv'
-    # get_df_from_filepath(test_data_dir, output_dir)
+    return
     
 
 if __name__ == "__main__":
