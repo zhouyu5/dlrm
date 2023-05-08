@@ -649,7 +649,9 @@ def main(argv: List[str]) -> None:
 
     train_dataloader = get_dataloader(args, backend, "train")
     val_dataloader = get_dataloader(args, backend, "val")
-    test_dataloader = get_dataloader(args, backend, "test")
+    test_dataloader = None
+    if 'test' in args.tasks:
+        test_dataloader = get_dataloader(args, backend, "test")
 
     eb_configs = [
         EmbeddingBagConfig(
@@ -776,7 +778,8 @@ def main(argv: List[str]) -> None:
             multihot.convert_to_multi_hot, train_dataloader
         )
         val_dataloader = RestartableMap(multihot.convert_to_multi_hot, val_dataloader)
-        test_dataloader = RestartableMap(multihot.convert_to_multi_hot, test_dataloader)
+        if 'test' in args.tasks:
+            test_dataloader = RestartableMap(multihot.convert_to_multi_hot, test_dataloader)
     train_val_test(
         args,
         model,
