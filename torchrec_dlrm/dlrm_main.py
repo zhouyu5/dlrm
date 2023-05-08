@@ -34,8 +34,8 @@ from torchrec.optim.apply_optimizer_in_backward import apply_optimizer_in_backwa
 from torchrec.optim.keyed import CombinedOptimizer, KeyedOptimizerWrapper
 from torchrec.optim.optimizers import in_backward_optimizer_filter
 from tqdm import tqdm
-
-
+import random
+import numpy as np
 
 from data.dlrm_dataloader import get_dataloader  # noqa F811
 from lr_scheduler import LRPolicyScheduler  # noqa F811
@@ -46,6 +46,18 @@ from data.recsys import (
 )
 
 
+def seed_torch(seed=123):
+    seed = int(seed)
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    torch.backends.cudnn.enabled = True
+    
 
 class InteractionType(Enum):
     ORIGINAL = "original"
@@ -518,6 +530,7 @@ def main(argv: List[str]) -> None:
         except (ValueError, AttributeError):
             pass
 
+    seed_torch(args.seed)
     torch.backends.cuda.matmul.allow_tf32 = args.allow_tf32
 
     if args.multi_hot_sizes is not None:
