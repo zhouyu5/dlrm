@@ -15,7 +15,11 @@ import pandas as pd
 import glob
 from tqdm import tqdm
 from sklearn import preprocessing
-from recsys import IS_DISCRETIZE, DISCRETIZE_BIN
+import lightgbm as lgb
+from recsys import (
+    IS_DISCRETIZE, DISCRETIZE_BIN,
+    IS_TREE_LEAF, TREE_NUM
+)
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -34,6 +38,12 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         "--output_dir",
         type=str,
         required=True,
+        help="Output directory to store npy files.",
+    )
+    parser.add_argument(
+        "--lgb_model_path",
+        type=str,
+        default='/home/vmagent/app/data/day53.model',
         help="Output directory to store npy files.",
     )
     return parser.parse_args(argv)
@@ -58,7 +68,7 @@ def get_all_df(input_dir):
     return df
 
 
-def get_preprocess_df(df, output_dir, preprocess=True, label_name='is_installed'):
+def get_preprocess_df(df, args, output_dir, preprocess=True, label_name='is_installed'):
     # input format
     # a. RowId(f_0)
     # b. Date(f_1)
@@ -75,10 +85,19 @@ def get_preprocess_df(df, output_dir, preprocess=True, label_name='is_installed'
     category_feat_names = [f'f_{i}' for i in range(2, 33)]
     # binary feat names
     binary_feat_names = [f'f_{i}' for i in range(33, 42)]
+    # tree leaf feat names
+    leaf_feat_names = [f'leaf_{i}' for i in range(TREE_NUM)]
 
     # output format, dense: 38, binary: 9, cat: 31
     save_cols = [label_name]
     save_cols += dense_feat_names + binary_feat_names + category_feat_names
+
+    if IS_TREE_LEAF:
+        gbm = lgb.Booster(model_file=args.lgb_model_path)
+        df_test = df.drop(['f_0', 'is_clicked', 'is_installed'], axis=1)
+        df[leaf_feat_names] = gbm.predict(df_test, num_iteration=TREE_NUM, pred_leaf=True)
+        del df_test
+        save_cols += leaf_feat_names
 
     # process time: range, 45--67
     df['f_1'] = df['f_1'] - 45
@@ -147,7 +166,7 @@ def main(argv: List[str]) -> None:
     os.system(f'mkdir -p {output_dir}')
 
     df = get_all_df(input_dir)
-    get_preprocess_df(df, output_dir, label_name='is_installed')
+    get_preprocess_df(df, args, output_dir, label_name='is_installed')
 
     return
     
