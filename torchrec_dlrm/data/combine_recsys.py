@@ -54,8 +54,8 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
     dense_cat_feat_names = [f'cat_f_{i}' for i in range(42, 80)]
     # cat feature
     category_feat_names = [f'f_{i}' for i in range(2, 33)]
-    # cat binary feat names
-    cat_binary_feat_names = [f'f_{i}' for i in range(2, 42)]
+    # binary feat names
+    binary_feat_names = [f'f_{i}' for i in range(33, 42)]
     
     # read input
     all_files = glob.glob(data_dir)
@@ -63,7 +63,7 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
 
     # output format, dense: 38, sparse: 40
     save_cols = [label_name]
-    save_cols += dense_feat_names + cat_binary_feat_names
+    save_cols += dense_feat_names + category_feat_names + binary_feat_names
 
     # process time: range, 45--67
     df['f_1'] = df['f_1'] - 45
@@ -77,7 +77,7 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
         if IS_DISCRETIZE:
             # strategy: quantile, uniform
             scaler = preprocessing.KBinsDiscretizer(
-                n_bins=10, encode='ordinal', 
+                n_bins=5, encode='ordinal', 
                 strategy='quantile',
                 subsample=None,
                 random_state=2023
