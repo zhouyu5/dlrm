@@ -61,9 +61,9 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
     all_files = glob.glob(data_dir)
     df = pd.concat((pd.read_csv(f, sep='\t') for f in all_files), ignore_index=True)
 
-    # output format, dense: 38, sparse: 40
+    # output format, dense: 38, binary: 9, cat: 31
     save_cols = [label_name]
-    save_cols += dense_feat_names + category_feat_names + binary_feat_names
+    save_cols += dense_feat_names + binary_feat_names + category_feat_names
 
     # process time: range, 45--67
     df['f_1'] = df['f_1'] - 45
