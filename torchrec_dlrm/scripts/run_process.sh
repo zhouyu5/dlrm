@@ -17,8 +17,8 @@ bash scripts/process_recsys.sh \
    $temp_data_dir \
    $npy_data_dir
 
-# step 3: multi-hot data
-python data/materialize_synthetic_multihot_dataset.py \
-    --in_memory_binary_criteo_path $npy_data_dir \
-    --output_path $multihot_data_dir \
-    --copy_labels_and_dense
+# # step 3: multi-hot data
+# python data/materialize_synthetic_multihot_dataset.py \
+#     --in_memory_binary_criteo_path $npy_data_dir \
+#     --output_path $multihot_data_dir \
+#     --copy_labels_and_dense
