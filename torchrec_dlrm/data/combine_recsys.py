@@ -75,9 +75,11 @@ def get_df_from_filepath(data_dir, output_dir, preprocess=True, label_name='is_i
         
         # dense feature Discretize
         if IS_DISCRETIZE:
+            # strategy: quantile, uniform
             scaler = preprocessing.KBinsDiscretizer(
                 n_bins=10, encode='ordinal', 
-                strategy='uniform',
+                strategy='quantile',
+                subsample=None,
                 random_state=2023
             )
             df[dense_cat_feat_names] = df[dense_feat_names].fillna(0)
