@@ -15,7 +15,7 @@ import pandas as pd
 import glob
 from tqdm import tqdm
 from sklearn import preprocessing
-from recsys import IS_DISCRETIZE
+from recsys import IS_DISCRETIZE, DISCRETIZE_BIN
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -92,7 +92,7 @@ def get_preprocess_df(df, output_dir, preprocess=True, label_name='is_installed'
         if IS_DISCRETIZE:
             # strategy: quantile, uniform
             scaler = preprocessing.KBinsDiscretizer(
-                n_bins=5, encode='ordinal', 
+                n_bins=DISCRETIZE_BIN, encode='ordinal', 
                 strategy='quantile',
                 subsample=None,
                 random_state=2023
