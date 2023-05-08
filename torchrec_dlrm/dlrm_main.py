@@ -36,6 +36,7 @@ from torchrec.optim.optimizers import in_backward_optimizer_filter
 from tqdm import tqdm
 import random
 import numpy as np
+import pandas as pd
 
 from data.dlrm_dataloader import get_dataloader  # noqa F811
 from lr_scheduler import LRPolicyScheduler  # noqa F811
@@ -304,6 +305,12 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         default="train,val",
         help="The tasks of the scripts",
     )
+    parser.add_argument(
+        "--pred_save_path",
+        type=str,
+        default="sub.csv",
+        help="The save path of the predictions",
+    )
     return parser.parse_args(argv)
 
 
@@ -363,8 +370,71 @@ def _evaluate(
         print(f"loss over {stage} set: {eval_loss}.")
         print(f"AUROC over {stage} set: {auroc_result}.")
         print(f"Number of {stage} samples: {num_samples}")
-        print('=================================================')
+    print('=================================================')
     return auroc_result
+
+
+def _test(
+    limit_batches: Optional[int],
+    pipeline: TrainPipelineSparseDist,
+    eval_dataloader: DataLoader,
+    stage: str,
+    save_path: str,
+) -> float:
+    """
+    Inference model. Computes and save predictions. Helper function for train_val_test.
+
+    Args:
+        limit_batches (Optional[int]): Limits the dataloader to the first `limit_batches` batches.
+        pipeline (TrainPipelineSparseDist): data pipeline.
+        eval_dataloader (DataLoader): Dataloader for either the validation set or test set.
+        stage (str): "val" or "test".
+        save_path: predition saving path
+
+    Returns:
+        float: prediction result
+    """
+    pipeline._model.eval()
+    device = pipeline._device
+
+    iterator = itertools.islice(iter(eval_dataloader), limit_batches)
+
+    is_rank_zero = dist.get_rank() == 0
+    if is_rank_zero:
+        pbar = tqdm(
+            iter(int, 1),
+            desc=f"Predicting {stage} set",
+            total=len(eval_dataloader),
+            disable=False,
+        )
+
+    prediction_array = []
+    label_array = []
+    with torch.no_grad():
+        while True:
+            try:
+                _loss, logits, labels = pipeline.progress(iterator)
+                preds = torch.sigmoid(logits)
+                prediction_array += [preds.cpu().numpy()]
+                label_array += [labels.cpu().numpy()]
+                if is_rank_zero:
+                    pbar.update(1)
+            except StopIteration:
+                break
+
+    num_samples = sum(map(len, label_array))
+
+    if is_rank_zero:
+        print(f"Number of {stage} samples: {num_samples}")
+
+    pd.DataFrame({
+        'row_id': np.concatenate(label_array, axis=0),
+        'is_clicked': [0.0] * num_samples,
+        'is_installed': np.concatenate(prediction_array, axis=0)
+    }).to_csv(save_path, sep='\t', header=True, index=False)
+
+    print('=================================================')
+    return prediction_array
 
 
 def batched(it: Iterator, n: int):
@@ -498,8 +568,7 @@ def train_val_test(
             results.val_aurocs.append(val_auroc)
 
     if "test" in args.tasks:
-        test_auroc = _evaluate(args.limit_test_batches, pipeline, test_dataloader, "test")
-        results.test_auroc = test_auroc
+        _test(args.limit_test_batches, pipeline, test_dataloader, "test", args.pred_save_path)
 
     return results
 
