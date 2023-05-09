@@ -15,9 +15,9 @@ from data.recsys import (
     DAYS,
     DEFAULT_CAT_NAMES,
     DEFAULT_INT_NAMES,
-    TRAIN_START, TRAIN_END,
-    VAL_START, VAL_END,
-    TEST_START, TEST_END,
+    TRAIN_DAYS,
+    VAL_DAYS,
+    TEST_DAYS,
     InMemoryBinaryCriteoIterDataPipe,
 )
 from torchrec.datasets.random import RandomRecDataset
@@ -85,21 +85,21 @@ def _get_in_memory_dataloader(
 
     if stage == "train":
         stage_files: List[List[str]] = [
-            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in range(TRAIN_START, TRAIN_END+1)],
-            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in range(TRAIN_START, TRAIN_END+1)],
-            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in range(TRAIN_START, TRAIN_END+1)],
+            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in TRAIN_DAYS],
+            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in TRAIN_DAYS],
+            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in TRAIN_DAYS],
         ]
     elif stage == "val":
         stage_files: List[List[str]] = [
-            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in range(VAL_START, VAL_END+1)],
-            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in range(VAL_START, VAL_END+1)],
-            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in range(VAL_START, VAL_END+1)],
+            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in VAL_DAYS],
+            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in VAL_DAYS],
+            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in VAL_DAYS],
         ]
     elif stage == 'test':
         stage_files: List[List[str]] = [
-            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in range(TEST_START, TEST_END+1)],
-            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in range(TEST_START, TEST_END+1)],
-            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in range(TEST_START, TEST_END+1)],
+            [os.path.join(dir_path, f"day_{i}_dense.npy") for i in TEST_DAYS],
+            [os.path.join(dir_path, f"day_{i}_{sparse_part}") for i in TEST_DAYS],
+            [os.path.join(dir_path, f"day_{i}_labels.npy") for i in TEST_DAYS],
         ]
     
     if stage in ["val", "test"] and args.test_batch_size is not None:

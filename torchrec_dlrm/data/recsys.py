@@ -26,10 +26,11 @@ from torchrec.datasets.utils import (
 from torchrec.sparse.jagged_tensor import KeyedJaggedTensor
 
 ###################### change ###################### 
+# day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
 DAYS = 23
-TRAIN_START, TRAIN_END = 0, 20
-VAL_START, VAL_END = 21, 21
-TEST_START, TEST_END = 22, 22
+TRAIN_DAYS = range(0, 21)
+VAL_DAYS = range(21, 22)
+TEST_DAYS = range(22, 23)
 
 INT_FEATURE_COUNT = 47
 CAT_FEATURE_COUNT = 31
