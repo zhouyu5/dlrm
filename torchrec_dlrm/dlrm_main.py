@@ -37,7 +37,7 @@ from tqdm import tqdm
 import random
 import numpy as np
 import pandas as pd
-
+import math
 from data.dlrm_dataloader import get_dataloader  # noqa F811
 from lr_scheduler import LRPolicyScheduler  # noqa F811
 from data.multi_hot import Multihot, RestartableMap  # noqa F811
@@ -314,6 +314,12 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     return parser.parse_args(argv)
 
 
+def entropy(label_array):
+    num_samples = sum(map(len, label_array))
+    pos_samples = sum(map(sum, label_array))
+    p = pos_samples / num_samples
+    return -p*math.log(p) - (1-p)*math.log(1-p)
+
 def _evaluate(
     limit_batches: Optional[int],
     pipeline: TrainPipelineSparseDist,
@@ -349,10 +355,12 @@ def _evaluate(
         )
 
     eval_loss = []
+    label_array = []
     with torch.no_grad():
         while True:
             try:
                 _loss, logits, labels = pipeline.progress(iterator)
+                label_array += [labels.cpu().numpy()]
                 eval_loss.append(_loss*labels.shape[0])
                 preds = torch.sigmoid(logits)
                 auroc(preds, labels)
@@ -363,7 +371,7 @@ def _evaluate(
 
     auroc_result = auroc.compute().item()
     num_samples = torch.tensor(sum(map(len, auroc.target)), device=device)
-    eval_loss = sum(eval_loss) / num_samples
+    eval_loss = sum(eval_loss) / num_samples / entropy(label_array)
     dist.reduce(num_samples, 0, op=dist.ReduceOp.SUM)
 
     if is_rank_zero:
