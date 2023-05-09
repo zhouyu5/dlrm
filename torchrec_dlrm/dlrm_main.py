@@ -353,7 +353,7 @@ def _evaluate(
         while True:
             try:
                 _loss, logits, labels = pipeline.progress(iterator)
-                eval_loss.append(_loss)
+                eval_loss.append(_loss*labels.shape[0])
                 preds = torch.sigmoid(logits)
                 auroc(preds, labels)
                 if is_rank_zero:
@@ -362,8 +362,8 @@ def _evaluate(
                 break
 
     auroc_result = auroc.compute().item()
-    eval_loss = sum(eval_loss) / len(eval_loss)
     num_samples = torch.tensor(sum(map(len, auroc.target)), device=device)
+    eval_loss = sum(eval_loss) / num_samples
     dist.reduce(num_samples, 0, op=dist.ReduceOp.SUM)
 
     if is_rank_zero:
