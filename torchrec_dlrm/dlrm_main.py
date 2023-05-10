@@ -311,16 +311,38 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         default="sub.csv",
         help="The save path of the predictions",
     )
+    parser.add_argument(
+        "--loss_type",
+        type=str,
+        default="NCE",
+        help="The loss type of the model",
+    )
+    parser.add_argument(
+        "--metrics",
+        type=str,
+        default="NCE,AUC",
+        help="The metrics plotted while evaluating",
+    )
     return parser.parse_args(argv)
 
 
-def entropy(label_array):
+def entropy(p):
+    epsilon = 1e-3
+    if p <= 0:
+        p = epsilon
+    if p >= 1:
+        p = 1 - epsilon
+    return -p*math.log(p) - (1-p)*math.log(1-p)
+
+
+def entropy_array(label_array):
     num_samples = sum(map(len, label_array))
     pos_samples = sum(map(sum, label_array))
     p = pos_samples / num_samples
-    return -p*math.log(p) - (1-p)*math.log(1-p)
+    return entropy(p)
 
 def _evaluate(
+    args: argparse.Namespace,
     limit_batches: Optional[int],
     pipeline: TrainPipelineSparseDist,
     eval_dataloader: DataLoader,
@@ -371,8 +393,11 @@ def _evaluate(
 
     auroc_result = auroc.compute().item()
     num_samples = torch.tensor(sum(map(len, auroc.target)), device=device)
-    eval_loss = sum(eval_loss) / num_samples / entropy(label_array)
     dist.reduce(num_samples, 0, op=dist.ReduceOp.SUM)
+
+    eval_loss = sum(eval_loss) / num_samples
+    if "NCE" in args.metrics:
+        eval_loss /= entropy_array(label_array)
 
     if is_rank_zero:
         print(f"loss over {stage} set: {eval_loss}.")
@@ -451,7 +476,16 @@ def batched(it: Iterator, n: int):
         yield itertools.chain((x,), itertools.islice(it, n - 1))
 
 
+def NCE_loss_backward(losses, output):
+    _, logits, labels = output
+    p = torch.sum(labels).item() / labels.size(dim=0)
+    losses = losses / entropy(p)
+    losses.backward()
+    return
+
+
 def _train(
+    args: argparse.Namespace,
     pipeline: TrainPipelineSparseDist,
     train_dataloader: DataLoader,
     val_dataloader: DataLoader,
@@ -506,7 +540,12 @@ def _train(
                 if is_rank_zero and print_lr:
                     for i, g in enumerate(pipeline._optimizer.param_groups):
                         print(f"lr: {it} {i} {g['lr']:.6f}")
-                pipeline.progress(batched_iterator)
+                if args.loss_type == 'BCE':
+                    pipeline.progress(batched_iterator)
+                elif args.loss_type == 'NCE':
+                    pipeline.progress(batched_iterator, backward_callback=NCE_loss_backward)
+                else:
+                    raise NotImplementedError
                 lr_scheduler.step()
                 if is_rank_zero:
                     pbar.update(1)
@@ -517,7 +556,7 @@ def _train(
                 break
 
         if validation_freq and start_it % validation_freq == 0:
-            _evaluate(limit_val_batches, pipeline, val_dataloader, "val")
+            _evaluate(args, limit_val_batches, pipeline, val_dataloader, "val")
             pipeline._model.train()
 
 
@@ -561,6 +600,7 @@ def train_val_test(
     for epoch in range(args.epochs):
         if "train" in args.tasks:
             _train(
+                args,
                 pipeline,
                 train_dataloader,
                 val_dataloader,
@@ -572,7 +612,7 @@ def train_val_test(
                 args.limit_val_batches,
             )
         if "val" in args.tasks:
-            val_auroc = _evaluate(args.limit_val_batches, pipeline, val_dataloader, "val")
+            val_auroc = _evaluate(args, args.limit_val_batches, pipeline, val_dataloader, "val")
             results.val_aurocs.append(val_auroc)
 
     if "test" in args.tasks:

@@ -464,8 +464,8 @@ def _rewrite_model(  # noqa C901
     return ret
 
 
-def default_backward_callback(losses):
-    torch.sum(losses, dim=0).backward()
+def default_backward_callback(losses, output):
+    losses.backward()
 
 
 class TrainPipelineSparseDist(TrainPipeline[In, Out]):
@@ -566,7 +566,7 @@ class TrainPipelineSparseDist(TrainPipeline[In, Out]):
         if self._model.training:
             # backward
             with record_function("## backward ##"):
-                backward_callback(losses)
+                backward_callback(losses, output)
 
             # update
             with record_function("## optimizer ##"):
