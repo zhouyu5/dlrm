@@ -18,7 +18,8 @@ from sklearn import preprocessing
 import lightgbm as lgb
 from recsys import (
     IS_DISCRETIZE, DISCRETIZE_BIN,
-    IS_TREE_LEAF, TREE_NUM
+    IS_TREE_LEAF, TREE_NUM,
+    LABEL_NAME
 )
 
 
@@ -166,7 +167,7 @@ def main(argv: List[str]) -> None:
     os.system(f'mkdir -p {output_dir}')
 
     df = get_all_df(input_dir)
-    get_preprocess_df(df, args, output_dir, label_name='is_installed')
+    get_preprocess_df(df, args, output_dir, label_name=LABEL_NAME)
 
     return
     
