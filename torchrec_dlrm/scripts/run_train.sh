@@ -4,10 +4,9 @@ set -x
 # bash scripts/run_process.sh && bash scripts/run_train.sh
 
 export CUDA_VISIBLE_DEVICES=1
-export synthetic_multi_hot_criteo_path='/home/vmagent/app/data/recsys2023_process/multihot'
-# export in_memory_binary_criteo_path='/home/vmagent/app/data/recsys2023_process/numpy_contiguous_shuffled_output_dataset_dir'
+export in_memory_binary_criteo_path='/home/vmagent/app/data/recsys2023_process/numpy_contiguous_shuffled_output_dataset_dir'
 # export in_memory_binary_criteo_path='/home/vmagent/app/data/recsys2023_process/npy-base'
-export in_memory_binary_criteo_path='/home/vmagent/app/data/recsys2023_process/npy-new-base-leaf-50'
+# export in_memory_binary_criteo_path='/home/vmagent/app/data/recsys2023_process/npy-new-base-leaf-50'
 export GLOBAL_BATCH_SIZE=128
 export WORLD_SIZE=1
 learning_rate=0.01
@@ -18,9 +17,6 @@ epochs=4
 # --interaction_type=dcn \
 # --dcn_num_layers=3 \
 # --dcn_low_rank_dim=128 \
-
-# --in_memory_binary_criteo_path $in_memory_binary_criteo_path \
-# --synthetic_multi_hot_criteo_path $synthetic_multi_hot_criteo_path \
 
 torchrun \
     --rdzv_id=100 --rdzv_backend=c10d --rdzv_endpoint=localhost:29400 \
@@ -41,6 +37,4 @@ torchrun \
     --tasks "train,val" \
     --interaction_type=dcn \
     --dcn_num_layers=3 \
-    --dcn_low_rank_dim=128 \
-    --seed 2020 
-
+    --dcn_low_rank_dim=128
