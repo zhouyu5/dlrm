@@ -18,7 +18,7 @@ from pyre_extensions import none_throws
 from torch import distributed as dist
 from torch.utils.data import DataLoader
 from torchrec import EmbeddingBagCollection
-from torchrec.distributed import TrainPipelineSparseDist
+from train_pipeline import TrainPipelineSparseDist
 from torchrec.distributed.comm import get_local_size
 from torchrec.distributed.model_parallel import (
     DistributedModelParallel,
