@@ -11,6 +11,11 @@ python data/combine_recsys.py \
    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
    --output_dir $raw_data_dir
 
+# python data/combine_recsys.py \
+#    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw2'
+
+
 # step 2: one-hot data
 bash scripts/process_recsys.sh \
    $raw_data_dir \

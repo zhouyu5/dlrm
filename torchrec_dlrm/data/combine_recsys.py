@@ -90,7 +90,7 @@ def get_preprocess_df(df, args, output_dir, preprocess=True, label_name='is_inst
     leaf_feat_names = [f'leaf_{i}' for i in range(TREE_NUM)]
 
     # output format, dense: 38, binary: 9, cat: 31
-    save_cols = [label_name]
+    save_cols = label_name.split(',')
     save_cols += dense_feat_names + binary_feat_names + category_feat_names
 
     if IS_TREE_LEAF:
