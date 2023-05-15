@@ -28,9 +28,9 @@ from torchrec.sparse.jagged_tensor import KeyedJaggedTensor
 ###################### change ###################### 
 # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
 DAYS = 23
-VAL_DAY = 15
-TRAIN_DAYS = range(0, VAL_DAY)
-VAL_DAYS = range(VAL_DAY, 22)
+VAL_DAY = 22
+TRAIN_DAYS = range(11, VAL_DAY)
+VAL_DAYS = range(21, 22)
 TEST_DAYS = range(22, 23)
 
 LABEL_NAME = 'is_installed'
