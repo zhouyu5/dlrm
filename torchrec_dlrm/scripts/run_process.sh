@@ -13,7 +13,7 @@ python data/combine_recsys.py \
 
 # python data/combine_recsys.py \
 #    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw4'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw5'
 
 
 # step 2: one-hot data
