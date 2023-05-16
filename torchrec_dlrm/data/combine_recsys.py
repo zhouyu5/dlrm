@@ -44,7 +44,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument(
         "--lgb_model_path",
         type=str,
-        default='/home/vmagent/app/data/day53.model',
+        default='/home/vmagent/app/data/day_45_55.model',
         help="Output directory to store npy files.",
     )
     return parser.parse_args(argv)
