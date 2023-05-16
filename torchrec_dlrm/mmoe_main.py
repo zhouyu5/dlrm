@@ -52,9 +52,11 @@ if __name__ == "__main__":
     # adagrad, adam, rmsprop
     optimizer = "adagrad"
     # learning_rate = 1e-2
-    shuffle = False
-    save_dir = 'predict/raw3_'
-    input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw3'
+    shuffle = True
+    save_dir = 'predict/raw2_'
+    input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
+    l2_reg_linear = 1e-5
+    l2_reg_embedding = 1e-5
 
     sparse_features = DEFAULT_CAT_NAMES
     dense_features = DEFAULT_INT_NAMES
@@ -98,8 +100,8 @@ if __name__ == "__main__":
         dnn_feature_columns, 
         num_experts=num_experts,
         task_types=['binary', 'binary'],
-        l2_reg_linear=0.0,
-        l2_reg_embedding=0.0,
+        l2_reg_linear=l2_reg_linear,
+        l2_reg_embedding=l2_reg_embedding,
         task_names=target, device=device
     )
     model.compile(optimizer, loss=["binary_crossentropy", "binary_crossentropy"],
