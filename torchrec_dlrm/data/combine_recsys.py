@@ -18,7 +18,8 @@ from sklearn import preprocessing
 import lightgbm as lgb
 from recsys import (
     IS_DISCRETIZE, DISCRETIZE_BIN,
-    IS_TREE_LEAF, TREE_NUM,
+    IS_INSTALL_TREE_LEAF, INSTALL_TREE_NUM,
+    IS_CLICK_TREE_LEAF, CLICK_TREE_NUM,
     LABEL_NAME
 )
 
@@ -42,10 +43,16 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         help="Output directory to store npy files.",
     )
     parser.add_argument(
-        "--lgb_model_path",
+        "--install_lgb_model_path",
         type=str,
-        default='/home/vmagent/app/data/day_45_55.model',
-        help="Output directory to store npy files.",
+        default='/home/vmagent/app/data/install_day_45_55.model',
+        help="install GBDT tree model",
+    )
+    parser.add_argument(
+        "--click_lgb_model_path",
+        type=str,
+        default='/home/vmagent/app/data/click_day_45_55.model',
+        help="click GBDT tree model",
     )
     return parser.parse_args(argv)
 
@@ -86,19 +93,26 @@ def get_preprocess_df(df, args, output_dir, preprocess=True, label_name='is_inst
     category_feat_names = [f'f_{i}' for i in range(2, 33)]
     # binary feat names
     binary_feat_names = [f'f_{i}' for i in range(33, 42)]
-    # tree leaf feat names
-    leaf_feat_names = [f'leaf_{i}' for i in range(TREE_NUM)]
 
     # output format, dense: 38, binary: 9, cat: 31
     save_cols = label_name.split(',')
     save_cols += dense_feat_names + binary_feat_names + category_feat_names
 
-    if IS_TREE_LEAF:
-        gbm = lgb.Booster(model_file=args.lgb_model_path)
-        df_test = df.drop(['f_0', 'is_clicked', 'is_installed'], axis=1)
-        df[leaf_feat_names] = gbm.predict(df_test, num_iteration=TREE_NUM, pred_leaf=True)
-        del df_test
-        save_cols += leaf_feat_names
+    df_test = df.drop(['f_0', 'is_clicked', 'is_installed'], axis=1)
+    if IS_INSTALL_TREE_LEAF:
+        # install tree leaf feat names
+        install_leaf_feat_names = [f'install_leaf_{i}' for i in range(INSTALL_TREE_NUM)]
+        gbm = lgb.Booster(model_file=args.install_lgb_model_path)
+        df[install_leaf_feat_names] = gbm.predict(df_test, num_iteration=INSTALL_TREE_NUM, pred_leaf=True)
+        save_cols += install_leaf_feat_names
+
+    if IS_CLICK_TREE_LEAF:
+        # click tree leaf feat names
+        click_leaf_feat_names = [f'click_leaf_{i}' for i in range(CLICK_TREE_NUM)]
+        gbm = lgb.Booster(model_file=args.click_lgb_model_path)
+        df[click_leaf_feat_names] = gbm.predict(df_test, num_iteration=CLICK_TREE_NUM, pred_leaf=True)
+        save_cols += click_leaf_feat_names
+    del df_test
 
     # process time: range, 45--67
     df['f_1'] = df['f_1'] - 45
