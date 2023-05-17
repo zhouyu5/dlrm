@@ -28,13 +28,14 @@ class EvaluatingCallback(keras.callbacks.Callback):
         pd.DataFrame({
             'row_id': labels,
             'is_clicked': [0.0] * num_samples,
-            'is_installed': pred_ans[:, i]
+            'is_installed': pred_ans[:, i].round(decimals=5)
         }).to_csv(save_path, sep='\t', header=True, index=False)
         
     def on_epoch_end(self, epoch, logs=None):
         def H(p):
             return -p*math.log(p) - (1-p)*math.log(1-p)
         pred_ans = self.model.predict(val_model_input, 256)
+        pred_ans = pred_ans.round(decimals=5)
         num_samples = pred_ans.shape[0]
         print(f'total number of samples in valid set: {num_samples}')
         for i, target_name in enumerate(target):
@@ -73,16 +74,16 @@ if __name__ == "__main__":
     ########################################### 0. prepare params ###########################################
     # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
-        # exp='single',
+        exp='single',
         # exp='multi',
-        exp='last-week',
+        # exp='last-week',
     )
 
     for TRAIN_DAYS, VAL_DAYS, TEST_DAYS in zip(
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        is_save_predict = False
+        is_save_predict = True
         num_experts = 3
         batch_size = 256
         epochs = 1
