@@ -19,7 +19,7 @@ from data.recsys import (
 
 class EvaluatingCallback(keras.callbacks.Callback):
     def __init__(self, label_list, valid, val_model_input, 
-                 is_save_predict=False,
+                 is_save_predict=False, save_path=None,
                  test=None, test_model_input=None):
         self.label_list = label_list
         self.valid = valid
@@ -27,6 +27,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
         self.val_model_input = val_model_input
         self.test_model_input = test_model_input
         self.is_save_predict = is_save_predict
+        self.save_path = save_path
 
     def save_predict(self, epoch):
         print(f'begin save predictions for epoch {epoch}...')
@@ -37,12 +38,11 @@ class EvaluatingCallback(keras.callbacks.Callback):
         labels = test[target[i]].values
         pred_ans = self.model.predict(test_model_input, 256)
         num_samples = pred_ans.shape[0]
-        save_path = f'{save_dir}sub_{epoch}.csv'
         pd.DataFrame({
             'row_id': labels,
             'is_clicked': [0.0] * num_samples,
             'is_installed': pred_ans[:, i].round(decimals=5)
-        }).to_csv(save_path, sep='\t', header=True, index=False)
+        }).to_csv(self.save_path, sep='\t', header=True, index=False)
         
     def on_epoch_end(self, epoch, logs=None):
         def H(p):
@@ -135,7 +135,8 @@ if __name__ == "__main__":
         optimizer = "adagrad"
         learning_rate = 1e-2
         shuffle = True
-        save_dir = 'predict/raw2_'
+        save_path = f'sub/sub_MMoE_'\
+            'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
@@ -191,7 +192,7 @@ if __name__ == "__main__":
         
         evaluate_callback = EvaluatingCallback(
             target, valid, val_model_input, 
-            is_save_predict,
+            is_save_predict, save_path,
             test, test_model_input
         )
         config_callback = ConfigCallback(
