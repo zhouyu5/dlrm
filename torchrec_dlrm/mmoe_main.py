@@ -71,18 +71,18 @@ class ConfigCallback(keras.callbacks.Callback):
         self.optimizer = optimizer
         self.lr = lr
     
-    def _get_optim(self, optimizer, lr):
+    def _get_optim(self):
         optimizer = self.optimizer
         lr = self.lr
         if isinstance(optimizer, str):
             if optimizer == "sgd":
-                optim = torch.optim.SGD(self.parameters(), lr=lr)
+                optim = torch.optim.SGD(self.model.parameters(), lr=lr)
             elif optimizer == "adam":
-                optim = torch.optim.Adam(self.parameters(), lr=lr)  # 0.001
+                optim = torch.optim.Adam(self.model.parameters(), lr=lr)  # 0.001
             elif optimizer == "adagrad":
-                optim = torch.optim.Adagrad(self.parameters(), lr=lr)  # 0.01
+                optim = torch.optim.Adagrad(self.model.parameters(), lr=lr)  # 0.01
             elif optimizer == "rmsprop":
-                optim = torch.optim.RMSprop(self.parameters(), lr=lr)
+                optim = torch.optim.RMSprop(self.model.parameters(), lr=lr)
             else:
                 raise NotImplementedError
         else:
