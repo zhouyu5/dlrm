@@ -55,10 +55,10 @@ def get_exp_days_list(exp='single'):
         train_days_list = [range(11, 22)]
         val_days_list = [range(21, 22)]
     elif exp == 'multi':
-        train_days_list = [range(val_day) for val_day in range(15, 22)]
+        train_days_list = [range(val_day-11, val_day) for val_day in range(15, 22)]
         val_days_list = [[val_day] for val_day in range(15, 22)]
     elif exp == 'last-week':
-        train_days_list = [range(15)]
+        train_days_list = [range(4, 15)]
         val_days_list = [range(15, 22)]
     else:
         raise NotImplementedError
@@ -74,8 +74,8 @@ if __name__ == "__main__":
     # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         # exp='single',
-        exp='multi',
-        # exp='last-week,'
+        # exp='multi',
+        exp='last-week',
     )
 
     for TRAIN_DAYS, VAL_DAYS, TEST_DAYS in zip(
