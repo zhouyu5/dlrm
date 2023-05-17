@@ -5,6 +5,7 @@ import torch
 from sklearn.metrics import log_loss, roc_auc_score
 import sys
 import os
+import math
 from tensorflow import keras
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
@@ -31,11 +32,17 @@ class EvaluatingCallback(keras.callbacks.Callback):
         }).to_csv(save_path, sep='\t', header=True, index=False)
         
     def on_epoch_end(self, epoch, logs=None):
+        def H(p):
+            return -p*math.log(p) - (1-p)*math.log(1-p)
         pred_ans = self.model.predict(val_model_input, 256)
         num_samples = pred_ans.shape[0]
         print(f'total number of samples in valid set: {num_samples}')
         for i, target_name in enumerate(target):
-            print("%s valid LogLoss" % target_name, round(log_loss(valid[target[i]].values, pred_ans[:, i]), 4))
+            bce_loss = log_loss(valid[target[i]].values, pred_ans[:, i])
+            XTR = valid[target[i]].sum() / valid[target[i]].shape[0]
+            nce_loss = bce_loss / H(XTR)
+            print("%s valid NCELoss" % target_name, round(nce_loss, 4))
+            print("%s valid LogLoss" % target_name, round(bce_loss, 4))
             print("%s valid AUC" % target_name, round(roc_auc_score(valid[target[i]].values, pred_ans[:, i]), 4))
         if is_save_predict:
             self.save_predict(epoch=epoch)
