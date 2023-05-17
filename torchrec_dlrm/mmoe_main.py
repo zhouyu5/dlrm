@@ -4,6 +4,7 @@ import numpy as np
 import torch
 from sklearn.metrics import log_loss, roc_auc_score
 import sys
+import os
 from tensorflow import keras
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
@@ -41,15 +42,38 @@ class EvaluatingCallback(keras.callbacks.Callback):
         print("########################################################")
 
 
+def get_exp_days_list(exp='single'):
+    print(f'You are choosing exp: {exp}...')
+    if exp == 'single':
+        train_days_list = [range(11, 22)]
+        val_days_list = [range(21, 22)]
+    elif exp == 'multi':
+        train_days_list = [range(val_day) for val_day in range(15, 22)]
+        val_days_list = [[val_day] for val_day in range(15, 22)]
+    elif exp == 'last-week':
+        train_days_list = [range(15)]
+        val_days_list = [range(15, 22)]
+    else:
+        raise NotImplementedError
+
+    test_days_list = [range(22, 23)] * len(train_days_list)
+
+    return train_days_list, val_days_list, test_days_list
+
+
 if __name__ == "__main__":
+    os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     ########################################### 0. prepare params ###########################################
     # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
-    train_days_list = [range(11, 22)]
-    val_days_list = [range(21, 22)]
-    test_days_list = [range(22, 23)]
+    train_days_list, val_days_list, test_days_list = get_exp_days_list(
+        # exp='single',
+        exp='multi',
+        # exp='last-week,'
+    )
 
     for TRAIN_DAYS, VAL_DAYS, TEST_DAYS in zip(
         train_days_list, val_days_list, test_days_list):
+        print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
         is_save_predict = False
         num_experts = 3
