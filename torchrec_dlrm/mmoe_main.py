@@ -18,8 +18,21 @@ from data.recsys import (
 
 
 class EvaluatingCallback(keras.callbacks.Callback):
+    def __init__(self, label_list, valid, val_model_input, 
+                 is_save_predict=False,
+                 test=None, test_model_input=None):
+        self.label_list = label_list
+        self.valid = valid
+        self.test = test
+        self.val_model_input = val_model_input
+        self.test_model_input = test_model_input
+        self.is_save_predict = is_save_predict
+
     def save_predict(self, epoch):
         print(f'begin save predictions for epoch {epoch}...')
+        test = self.test
+        test_model_input = self.test_model_input
+        target = self.label_list
         i = target.index('is_installed')
         labels = test[target[i]].values
         pred_ans = self.model.predict(test_model_input, 256)
@@ -34,6 +47,9 @@ class EvaluatingCallback(keras.callbacks.Callback):
     def on_epoch_end(self, epoch, logs=None):
         def H(p):
             return -p*math.log(p) - (1-p)*math.log(1-p)
+        valid = self.valid
+        val_model_input = self.val_model_input
+        target = self.label_list
         pred_ans = self.model.predict(val_model_input, 256)
         pred_ans = pred_ans.round(decimals=5)
         num_samples = pred_ans.shape[0]
@@ -48,6 +64,34 @@ class EvaluatingCallback(keras.callbacks.Callback):
         if is_save_predict:
             self.save_predict(epoch=epoch)
         print("########################################################")
+
+
+class ConfigCallback(keras.callbacks.Callback):
+    def __init__(self, optimizer, lr):
+        self.optimizer = optimizer
+        self.lr = lr
+    
+    def _get_optim(self, optimizer, lr):
+        optimizer = self.optimizer
+        lr = self.lr
+        if isinstance(optimizer, str):
+            if optimizer == "sgd":
+                optim = torch.optim.SGD(self.parameters(), lr=lr)
+            elif optimizer == "adam":
+                optim = torch.optim.Adam(self.parameters(), lr=lr)  # 0.001
+            elif optimizer == "adagrad":
+                optim = torch.optim.Adagrad(self.parameters(), lr=lr)  # 0.01
+            elif optimizer == "rmsprop":
+                optim = torch.optim.RMSprop(self.parameters(), lr=lr)
+            else:
+                raise NotImplementedError
+        else:
+            optim = optimizer
+        return optim
+    
+    def on_train_begin(self, logs=None):
+        print(f'You are choosing optimizer {self.optimizer}, initial lr: {self.lr}')
+        self.model.optim = self._get_optim()
 
 
 def get_exp_days_list(exp='single'):
@@ -89,7 +133,7 @@ if __name__ == "__main__":
         epochs = 1
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
-        # learning_rate = 1e-2
+        learning_rate = 1e-2
         shuffle = True
         save_dir = 'predict/raw2_'
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
@@ -144,12 +188,23 @@ if __name__ == "__main__":
         )
         model.compile(optimizer, loss=["binary_crossentropy", "binary_crossentropy"],
                     metrics=['binary_crossentropy'], )
+        
+        evaluate_callback = EvaluatingCallback(
+            target, valid, val_model_input, 
+            is_save_predict,
+            test, test_model_input
+        )
+        config_callback = ConfigCallback(
+            optimizer, learning_rate
+        )
 
         history = model.fit(
             train_model_input, train[target].values, 
             batch_size=batch_size, epochs=epochs, 
             # validation_data=(val_model_input, valid[target].values),
             shuffle=shuffle,
-            callbacks=[EvaluatingCallback()],
+            callbacks=[
+                evaluate_callback, config_callback
+            ],
         )
     
