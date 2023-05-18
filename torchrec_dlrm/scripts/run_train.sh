@@ -17,6 +17,7 @@ pred_save_path='sub/sub_DLRM.csv'
 # --interaction_type=dcn \
 # --dcn_num_layers=3 \
 # --dcn_low_rank_dim=128 \
+# --shuffle_training_set
 
 torchrun \
     --rdzv_id=100 --rdzv_backend=c10d --rdzv_endpoint=localhost:29400 \
@@ -39,4 +40,5 @@ torchrun \
     --dcn_num_layers=3 \
     --dcn_low_rank_dim=128 \
     --shuffle_batches \
-    --pred_save_path $pred_save_path
+    --pred_save_path $pred_save_path \
+    --shuffle_training_set
