@@ -314,7 +314,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument(
         "--loss_type",
         type=str,
-        default="NCE",
+        default="BCE",
         help="The loss type of the model",
     )
     parser.add_argument(
