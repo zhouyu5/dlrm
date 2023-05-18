@@ -43,7 +43,8 @@ from lr_scheduler import LRPolicyScheduler  # noqa F811
 from data.multi_hot import Multihot, RestartableMap  # noqa F811
 from data.recsys import (
     DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES,
-    NUM_EMBEDDINGS_PER_FEAT
+    NUM_EMBEDDINGS_PER_FEAT,
+    TRAIN_DAYS, VAL_DAYS,
 )
 
 
@@ -637,6 +638,7 @@ def main(argv: List[str]) -> None:
     Returns:
         None.
     """
+    print(f'train_days: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
     args = parse_args(argv)
     if args.num_embeddings_per_feature is None:
         args.num_embeddings_per_feature = NUM_EMBEDDINGS_PER_FEAT
