@@ -101,6 +101,7 @@ def get_exp_days_list(exp='single'):
         val_days_list = [range(21, 22)]
     elif exp == 'multi':
         train_days_list = [range(val_day-11, val_day) for val_day in range(15, 22)]
+        # train_days_list = [range(0, val_day) for val_day in range(15, 22)]
         val_days_list = [[val_day] for val_day in range(15, 22)]
     elif exp == 'last_week':
         train_days_list = [range(4, 15)]
@@ -127,6 +128,11 @@ if __name__ == "__main__":
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
+        save_dir = f'sub/{model_name}_no_shuffle'
+        os.system(f'mkdir -p {save_dir}')
+        save_path = f'{save_dir}/sub_{model_name}_{exp_mode}_'\
+            f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
+
         model_name = 'MMoE' # MMoE, PLE
         is_save_predict = True
         num_experts = 3
@@ -136,8 +142,6 @@ if __name__ == "__main__":
         optimizer = "adagrad"
         learning_rate = 1e-2
         shuffle = True
-        save_path = f'sub/{model_name}/sub_{model_name}_{exp_mode}_'\
-            f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
