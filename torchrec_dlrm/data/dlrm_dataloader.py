@@ -15,9 +15,6 @@ from data.recsys import (
     DAYS,
     DEFAULT_CAT_NAMES,
     DEFAULT_INT_NAMES,
-    TRAIN_DAYS,
-    VAL_DAYS,
-    TEST_DAYS,
     InMemoryBinaryCriteoIterDataPipe,
 )
 from torchrec.datasets.random import RandomRecDataset
@@ -82,6 +79,10 @@ def _get_in_memory_dataloader(
         dir_path = args.synthetic_multi_hot_criteo_path
         sparse_part = "sparse_multi_hot.npz"
         datapipe = MultiHotCriteoIterDataPipe
+
+    TRAIN_DAYS = args.TRAIN_DAYS
+    VAL_DAYS = args.VAL_DAYS
+    TEST_DAYS = args.TEST_DAYS
 
     if stage == "train":
         stage_files: List[List[str]] = [

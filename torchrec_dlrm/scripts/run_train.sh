@@ -11,7 +11,6 @@ export WORLD_SIZE=1
 export GLOBAL_BATCH_SIZE=256
 learning_rate=0.01
 epochs=1
-pred_save_path='sub/sub_DLRM.csv'
 
 
 # --interaction_type=dcn \
@@ -39,6 +38,6 @@ torchrun \
     --interaction_type=dcn \
     --dcn_num_layers=3 \
     --dcn_low_rank_dim=128 \
-    --shuffle_batches \
-    --pred_save_path $pred_save_path \
-    --shuffle_training_set
+    --shuffle_batches
+
+

@@ -44,7 +44,6 @@ from data.multi_hot import Multihot, RestartableMap  # noqa F811
 from data.recsys import (
     DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES,
     NUM_EMBEDDINGS_PER_FEAT,
-    TRAIN_DAYS, VAL_DAYS,
 )
 
 
@@ -309,7 +308,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument(
         "--pred_save_path",
         type=str,
-        default="sub.csv",
+        default="sub/sub_DLRM.csv",
         help="The save path of the predictions",
     )
     parser.add_argument(
@@ -638,7 +637,6 @@ def main(argv: List[str]) -> None:
     Returns:
         None.
     """
-    print(f'train_days: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
     args = parse_args(argv)
     if args.num_embeddings_per_feature is None:
         args.num_embeddings_per_feature = NUM_EMBEDDINGS_PER_FEAT
@@ -697,151 +695,191 @@ def main(argv: List[str]) -> None:
             if getattr(args, attr) is None:
                 setattr(args, attr, 10)
 
-    train_dataloader = get_dataloader(args, backend, "train")
-    val_dataloader = get_dataloader(args, backend, "val")
-    test_dataloader = None
-    if 'test' in args.tasks:
-        test_dataloader = get_dataloader(args, backend, "test")
-
-    eb_configs = [
-        EmbeddingBagConfig(
-            name=f"t_{feature_name}",
-            embedding_dim=args.embedding_dim,
-            num_embeddings=none_throws(args.num_embeddings_per_feature)[feature_idx],
-            feature_names=[feature_name],
-        )
-        for feature_idx, feature_name in enumerate(DEFAULT_CAT_NAMES)
-    ]
-    sharded_module_kwargs = {}
-    if args.over_arch_layer_sizes is not None:
-        sharded_module_kwargs["over_arch_layer_sizes"] = args.over_arch_layer_sizes
-
-    if args.interaction_type == InteractionType.ORIGINAL:
-        dlrm_model = DLRM(
-            embedding_bag_collection=EmbeddingBagCollection(
-                tables=eb_configs, device=torch.device("meta")
-            ),
-            dense_in_features=len(DEFAULT_INT_NAMES),
-            dense_arch_layer_sizes=args.dense_arch_layer_sizes,
-            over_arch_layer_sizes=args.over_arch_layer_sizes,
-            dense_device=device,
-        )
-    elif args.interaction_type == InteractionType.DCN:
-        dlrm_model = DLRM_DCN(
-            embedding_bag_collection=EmbeddingBagCollection(
-                tables=eb_configs, device=torch.device("meta")
-            ),
-            dense_in_features=len(DEFAULT_INT_NAMES),
-            dense_arch_layer_sizes=args.dense_arch_layer_sizes,
-            over_arch_layer_sizes=args.over_arch_layer_sizes,
-            dcn_num_layers=args.dcn_num_layers,
-            dcn_low_rank_dim=args.dcn_low_rank_dim,
-            dense_device=device,
-        )
-    elif args.interaction_type == InteractionType.PROJECTION:
-        dlrm_model = DLRM_Projection(
-            embedding_bag_collection=EmbeddingBagCollection(
-                tables=eb_configs, device=torch.device("meta")
-            ),
-            dense_in_features=len(DEFAULT_INT_NAMES),
-            dense_arch_layer_sizes=args.dense_arch_layer_sizes,
-            over_arch_layer_sizes=args.over_arch_layer_sizes,
-            interaction_branch1_layer_sizes=args.interaction_branch1_layer_sizes,
-            interaction_branch2_layer_sizes=args.interaction_branch2_layer_sizes,
-            dense_device=device,
-        )
-    else:
-        raise ValueError(
-            "Unknown interaction option set. Should be original, dcn, or projection."
-        )
-
-    train_model = DLRMTrain(dlrm_model)
-    embedding_optimizer = torch.optim.Adagrad if args.adagrad else torch.optim.SGD
-    # This will apply the Adagrad optimizer in the backward pass for the embeddings (sparse_arch). This means that
-    # the optimizer update will be applied in the backward pass, in this case through a fused op.
-    # TorchRec will use the FBGEMM implementation of EXACT_ADAGRAD. For GPU devices, a fused CUDA kernel is invoked. For CPU, FBGEMM_GPU invokes CPU kernels
-    # https://github.com/pytorch/FBGEMM/blob/2cb8b0dff3e67f9a009c4299defbd6b99cc12b8f/fbgemm_gpu/fbgemm_gpu/split_table_batched_embeddings_ops.py#L676-L678
-
-    # Note that lr_decay, weight_decay and initial_accumulator_value for Adagrad optimizer in FBGEMM v0.3.2
-    # cannot be specified below. This equivalently means that all these parameters are hardcoded to zero.
-    optimizer_kwargs = {"lr": args.learning_rate}
-    if args.adagrad:
-        optimizer_kwargs["eps"] = args.eps
-    apply_optimizer_in_backward(
-        embedding_optimizer,
-        train_model.model.sparse_arch.parameters(),
-        optimizer_kwargs,
-    )
-    planner = EmbeddingShardingPlanner(
-        topology=Topology(
-            local_world_size=get_local_size(),
-            world_size=dist.get_world_size(),
-            compute_device=device.type,
-        ),
-        batch_size=args.batch_size,
-        # If experience OOM, increase the percentage. see
-        # https://pytorch.org/torchrec/torchrec.distributed.planner.html#torchrec.distributed.planner.storage_reservations.HeuristicalStorageReservation
-        storage_reservation=HeuristicalStorageReservation(percentage=0.05),
-    )
-    plan = planner.collective_plan(
-        train_model, get_default_sharders(), dist.GroupMember.WORLD
+    ##############################################################################
+    exp_mode = 'multi'
+    train_days_list, val_days_list, test_days_list = get_exp_days_list(
+        exp=exp_mode
     )
 
-    model = DistributedModelParallel(
-        module=train_model,
-        device=device,
-        plan=plan,
-    )
-    if rank == 0 and args.print_sharding_plan:
-        for collectionkey, plans in model._plan.plan.items():
-            print(collectionkey)
-            for table_name, plan in plans.items():
-                print(table_name, "\n", plan, "\n")
+    for TRAIN_DAYS, VAL_DAYS, TEST_DAYS in zip(
+        train_days_list, val_days_list, test_days_list):
+        print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
+        
+        args.TRAIN_DAYS = TRAIN_DAYS
+        args.VAL_DAYS = VAL_DAYS
+        args.TEST_DAYS = TEST_DAYS
 
-    def optimizer_with_params():
-        if args.adagrad:
-            return lambda params: torch.optim.Adagrad(
-                params, lr=args.learning_rate, eps=args.eps
+        save_dir = 'sub/DLRM'
+        os.system(f'mkdir -p {save_dir}')
+        args.pred_save_path = f'{save_dir}/sub_DLRM_{exp_mode}_'\
+            f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
+
+        train_dataloader = get_dataloader(args, backend, "train")
+        val_dataloader = get_dataloader(args, backend, "val")
+        test_dataloader = None
+        if 'test' in args.tasks:
+            test_dataloader = get_dataloader(args, backend, "test")
+
+        eb_configs = [
+            EmbeddingBagConfig(
+                name=f"t_{feature_name}",
+                embedding_dim=args.embedding_dim,
+                num_embeddings=none_throws(args.num_embeddings_per_feature)[feature_idx],
+                feature_names=[feature_name],
+            )
+            for feature_idx, feature_name in enumerate(DEFAULT_CAT_NAMES)
+        ]
+        sharded_module_kwargs = {}
+        if args.over_arch_layer_sizes is not None:
+            sharded_module_kwargs["over_arch_layer_sizes"] = args.over_arch_layer_sizes
+
+        if args.interaction_type == InteractionType.ORIGINAL:
+            dlrm_model = DLRM(
+                embedding_bag_collection=EmbeddingBagCollection(
+                    tables=eb_configs, device=torch.device("meta")
+                ),
+                dense_in_features=len(DEFAULT_INT_NAMES),
+                dense_arch_layer_sizes=args.dense_arch_layer_sizes,
+                over_arch_layer_sizes=args.over_arch_layer_sizes,
+                dense_device=device,
+            )
+        elif args.interaction_type == InteractionType.DCN:
+            dlrm_model = DLRM_DCN(
+                embedding_bag_collection=EmbeddingBagCollection(
+                    tables=eb_configs, device=torch.device("meta")
+                ),
+                dense_in_features=len(DEFAULT_INT_NAMES),
+                dense_arch_layer_sizes=args.dense_arch_layer_sizes,
+                over_arch_layer_sizes=args.over_arch_layer_sizes,
+                dcn_num_layers=args.dcn_num_layers,
+                dcn_low_rank_dim=args.dcn_low_rank_dim,
+                dense_device=device,
+            )
+        elif args.interaction_type == InteractionType.PROJECTION:
+            dlrm_model = DLRM_Projection(
+                embedding_bag_collection=EmbeddingBagCollection(
+                    tables=eb_configs, device=torch.device("meta")
+                ),
+                dense_in_features=len(DEFAULT_INT_NAMES),
+                dense_arch_layer_sizes=args.dense_arch_layer_sizes,
+                over_arch_layer_sizes=args.over_arch_layer_sizes,
+                interaction_branch1_layer_sizes=args.interaction_branch1_layer_sizes,
+                interaction_branch2_layer_sizes=args.interaction_branch2_layer_sizes,
+                dense_device=device,
             )
         else:
-            return lambda params: torch.optim.SGD(params, lr=args.learning_rate)
+            raise ValueError(
+                "Unknown interaction option set. Should be original, dcn, or projection."
+            )
 
-    dense_optimizer = KeyedOptimizerWrapper(
-        dict(in_backward_optimizer_filter(model.named_parameters())),
-        optimizer_with_params(),
-    )
-    optimizer = CombinedOptimizer([model.fused_optimizer, dense_optimizer])
-    lr_scheduler = LRPolicyScheduler(
-        optimizer, args.lr_warmup_steps, args.lr_decay_start, args.lr_decay_steps
-    )
+        train_model = DLRMTrain(dlrm_model)
+        embedding_optimizer = torch.optim.Adagrad if args.adagrad else torch.optim.SGD
+        # This will apply the Adagrad optimizer in the backward pass for the embeddings (sparse_arch). This means that
+        # the optimizer update will be applied in the backward pass, in this case through a fused op.
+        # TorchRec will use the FBGEMM implementation of EXACT_ADAGRAD. For GPU devices, a fused CUDA kernel is invoked. For CPU, FBGEMM_GPU invokes CPU kernels
+        # https://github.com/pytorch/FBGEMM/blob/2cb8b0dff3e67f9a009c4299defbd6b99cc12b8f/fbgemm_gpu/fbgemm_gpu/split_table_batched_embeddings_ops.py#L676-L678
 
-    if args.multi_hot_sizes is not None:
-        multihot = Multihot(
-            args.multi_hot_sizes,
-            args.num_embeddings_per_feature,
-            args.batch_size,
-            collect_freqs_stats=args.collect_multi_hot_freqs_stats,
-            dist_type=args.multi_hot_distribution_type,
+        # Note that lr_decay, weight_decay and initial_accumulator_value for Adagrad optimizer in FBGEMM v0.3.2
+        # cannot be specified below. This equivalently means that all these parameters are hardcoded to zero.
+        optimizer_kwargs = {"lr": args.learning_rate}
+        if args.adagrad:
+            optimizer_kwargs["eps"] = args.eps
+        apply_optimizer_in_backward(
+            embedding_optimizer,
+            train_model.model.sparse_arch.parameters(),
+            optimizer_kwargs,
         )
-        multihot.pause_stats_collection_during_val_and_test(model)
-        train_dataloader = RestartableMap(
-            multihot.convert_to_multi_hot, train_dataloader
+        planner = EmbeddingShardingPlanner(
+            topology=Topology(
+                local_world_size=get_local_size(),
+                world_size=dist.get_world_size(),
+                compute_device=device.type,
+            ),
+            batch_size=args.batch_size,
+            # If experience OOM, increase the percentage. see
+            # https://pytorch.org/torchrec/torchrec.distributed.planner.html#torchrec.distributed.planner.storage_reservations.HeuristicalStorageReservation
+            storage_reservation=HeuristicalStorageReservation(percentage=0.05),
         )
-        val_dataloader = RestartableMap(multihot.convert_to_multi_hot, val_dataloader)
-        if 'test' in args.tasks:
-            test_dataloader = RestartableMap(multihot.convert_to_multi_hot, test_dataloader)
-    train_val_test(
-        args,
-        model,
-        optimizer,
-        device,
-        train_dataloader,
-        val_dataloader,
-        test_dataloader,
-        lr_scheduler,
-    )
-    if args.collect_multi_hot_freqs_stats:
-        multihot.save_freqs_stats()
+        plan = planner.collective_plan(
+            train_model, get_default_sharders(), dist.GroupMember.WORLD
+        )
+
+        model = DistributedModelParallel(
+            module=train_model,
+            device=device,
+            plan=plan,
+        )
+        if rank == 0 and args.print_sharding_plan:
+            for collectionkey, plans in model._plan.plan.items():
+                print(collectionkey)
+                for table_name, plan in plans.items():
+                    print(table_name, "\n", plan, "\n")
+
+        dense_optimizer = KeyedOptimizerWrapper(
+            dict(in_backward_optimizer_filter(model.named_parameters())),
+            optimizer_with_params(args),
+        )
+        optimizer = CombinedOptimizer([model.fused_optimizer, dense_optimizer])
+        lr_scheduler = LRPolicyScheduler(
+            optimizer, args.lr_warmup_steps, args.lr_decay_start, args.lr_decay_steps
+        )
+
+        if args.multi_hot_sizes is not None:
+            multihot = Multihot(
+                args.multi_hot_sizes,
+                args.num_embeddings_per_feature,
+                args.batch_size,
+                collect_freqs_stats=args.collect_multi_hot_freqs_stats,
+                dist_type=args.multi_hot_distribution_type,
+            )
+            multihot.pause_stats_collection_during_val_and_test(model)
+            train_dataloader = RestartableMap(
+                multihot.convert_to_multi_hot, train_dataloader
+            )
+            val_dataloader = RestartableMap(multihot.convert_to_multi_hot, val_dataloader)
+            if 'test' in args.tasks:
+                test_dataloader = RestartableMap(multihot.convert_to_multi_hot, test_dataloader)
+        train_val_test(
+            args,
+            model,
+            optimizer,
+            device,
+            train_dataloader,
+            val_dataloader,
+            test_dataloader,
+            lr_scheduler,
+        )
+        if args.collect_multi_hot_freqs_stats:
+            multihot.save_freqs_stats()
+
+
+def optimizer_with_params(args):
+    if args.adagrad:
+        return lambda params: torch.optim.Adagrad(
+            params, lr=args.learning_rate, eps=args.eps
+        )
+    else:
+        return lambda params: torch.optim.SGD(params, lr=args.learning_rate)
+
+
+def get_exp_days_list(exp='single'):
+    print(f'You are choosing exp: {exp}...')
+    if exp == 'single':
+        train_days_list = [range(11, 22)]
+        val_days_list = [range(21, 22)]
+    elif exp == 'multi':
+        # train_days_list = [range(val_day-11, val_day) for val_day in range(15, 22)]
+        train_days_list = [range(0, val_day) for val_day in range(15, 22)]
+        val_days_list = [[val_day] for val_day in range(15, 22)]
+    elif exp == 'last_week':
+        train_days_list = [range(4, 15)]
+        val_days_list = [range(15, 22)]
+    else:
+        raise NotImplementedError
+
+    test_days_list = [range(22, 23)] * len(train_days_list)
+
+    return train_days_list, val_days_list, test_days_list
 
 
 if __name__ == "__main__":
