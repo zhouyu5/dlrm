@@ -127,6 +127,7 @@ if __name__ == "__main__":
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
+        model_name = 'MMoE' # MMoE, PLE
         is_save_predict = True
         num_experts = 3
         batch_size = 256
@@ -135,8 +136,8 @@ if __name__ == "__main__":
         optimizer = "adagrad"
         learning_rate = 1e-2
         shuffle = True
-        save_path = f'sub/sub_MMoE_'\
-            'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
+        save_path = f'sub/sub_{model_name}_'\
+            f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
@@ -179,14 +180,26 @@ if __name__ == "__main__":
             print('cuda ready...')
             device = 'cuda:0'
 
-        model = MMOE(
-            dnn_feature_columns, 
-            num_experts=num_experts,
-            task_types=['binary', 'binary'],
-            l2_reg_linear=l2_reg_linear,
-            l2_reg_embedding=l2_reg_embedding,
-            task_names=target, device=device
-        )
+        if model_name == 'MMoE':
+            model = MMOE(
+                dnn_feature_columns, 
+                num_experts=num_experts,
+                task_types=['binary', 'binary'],
+                l2_reg_linear=l2_reg_linear,
+                l2_reg_embedding=l2_reg_embedding,
+                task_names=target, device=device
+            )
+        elif model_name == 'PLE':
+            model = PLE(
+                dnn_feature_columns, 
+                task_types=['binary', 'binary'],
+                l2_reg_linear=l2_reg_linear,
+                l2_reg_embedding=l2_reg_embedding,
+                task_names=target, device=device
+            )
+        else:
+            raise NotImplementedError
+
         model.compile(optimizer, loss=["binary_crossentropy", "binary_crossentropy"],
                     metrics=['binary_crossentropy'], )
         
