@@ -18,7 +18,7 @@ from pyre_extensions import none_throws
 from torch import distributed as dist
 from torch.utils.data import DataLoader
 from torchrec import EmbeddingBagCollection
-from train_pipeline import TrainPipelineSparseDist
+from train.train_pipeline import TrainPipelineSparseDist
 from torchrec.distributed.comm import get_local_size
 from torchrec.distributed.model_parallel import (
     DistributedModelParallel,
@@ -39,7 +39,7 @@ import numpy as np
 import pandas as pd
 import math
 from data.dlrm_dataloader import get_dataloader  # noqa F811
-from lr_scheduler import LRPolicyScheduler  # noqa F811
+from train.lr_scheduler import LRPolicyScheduler  # noqa F811
 from data.multi_hot import Multihot, RestartableMap  # noqa F811
 from data.recsys import (
     DEFAULT_CAT_NAMES, DEFAULT_INT_NAMES,
