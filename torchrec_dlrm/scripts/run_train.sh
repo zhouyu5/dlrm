@@ -16,6 +16,7 @@ epochs=1
 # --interaction_type=dcn \
 # --dcn_num_layers=3 \
 # --dcn_low_rank_dim=128 \
+# --shuffle_batches
 # --shuffle_training_set
 
 torchrun \
@@ -39,5 +40,4 @@ torchrun \
     --dcn_num_layers=3 \
     --dcn_low_rank_dim=128 \
     --shuffle_batches
-
 

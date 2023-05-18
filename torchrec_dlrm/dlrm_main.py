@@ -647,7 +647,6 @@ def main(argv: List[str]) -> None:
         except (ValueError, AttributeError):
             pass
 
-    seed_torch(args.seed)
     torch.backends.cuda.matmul.allow_tf32 = args.allow_tf32
 
     if args.multi_hot_sizes is not None:
@@ -704,6 +703,8 @@ def main(argv: List[str]) -> None:
     for TRAIN_DAYS, VAL_DAYS, TEST_DAYS in zip(
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
+
+        seed_torch(args.seed)
         
         args.TRAIN_DAYS = TRAIN_DAYS
         args.VAL_DAYS = VAL_DAYS
@@ -865,7 +866,7 @@ def optimizer_with_params(args):
 def get_exp_days_list(exp='single'):
     print(f'You are choosing exp: {exp}...')
     if exp == 'single':
-        train_days_list = [range(11, 22)]
+        train_days_list = [range(0, 21)]
         val_days_list = [range(21, 22)]
     elif exp == 'multi':
         # train_days_list = [range(val_day-11, val_day) for val_day in range(15, 22)]

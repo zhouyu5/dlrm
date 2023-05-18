@@ -9,6 +9,7 @@ import math
 from tensorflow import keras
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
+from dlrm_main import seed_torch
 
 from data.recsys import (
     DEFAULT_CAT_NAMES,
@@ -127,6 +128,8 @@ if __name__ == "__main__":
     for TRAIN_DAYS, VAL_DAYS, TEST_DAYS in zip(
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
+
+        seed_torch(1024)
 
         save_dir = f'sub/{model_name}_no_shuffle'
         os.system(f'mkdir -p {save_dir}')
