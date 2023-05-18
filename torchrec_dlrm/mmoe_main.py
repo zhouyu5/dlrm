@@ -136,7 +136,7 @@ if __name__ == "__main__":
         optimizer = "adagrad"
         learning_rate = 1e-2
         shuffle = True
-        save_path = f'sub/sub_{model_name}_{exp_mode}_'\
+        save_path = f'sub/{model_name}/sub_{model_name}_{exp_mode}_'\
             f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
         l2_reg_linear = 0.0
