@@ -462,7 +462,7 @@ def _test(
         print(f"Number of {stage} samples: {num_samples}")
 
     pd.DataFrame({
-        'row_id': np.concatenate(label_array, axis=0),
+        'RowId': np.concatenate(label_array, axis=0),
         'is_clicked': [0.0] * num_samples,
         'is_installed': np.concatenate(prediction_array, axis=0)
     }).to_csv(save_path, sep='\t', header=True, index=False)

@@ -39,7 +39,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
         pred_ans = self.model.predict(test_model_input, 256)
         num_samples = pred_ans.shape[0]
         pd.DataFrame({
-            'row_id': labels,
+            'RowId': labels,
             'is_clicked': [0.0] * num_samples,
             'is_installed': pred_ans[:, i].round(decimals=5)
         }).to_csv(self.save_path, sep='\t', header=True, index=False)
@@ -118,8 +118,8 @@ if __name__ == "__main__":
     ########################################### 0. prepare params ###########################################
     # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
-        exp='single',
-        # exp='multi',
+        # exp='single',
+        exp='multi',
         # exp='last-week',
     )
 
