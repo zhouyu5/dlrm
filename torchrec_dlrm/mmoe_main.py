@@ -102,7 +102,7 @@ def get_exp_days_list(exp='single'):
     elif exp == 'multi':
         train_days_list = [range(val_day-11, val_day) for val_day in range(15, 22)]
         val_days_list = [[val_day] for val_day in range(15, 22)]
-    elif exp == 'last-week':
+    elif exp == 'last_week':
         train_days_list = [range(4, 15)]
         val_days_list = [range(15, 22)]
     else:
@@ -117,10 +117,10 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     ########################################### 0. prepare params ###########################################
     # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
+    # single, multi, last_week
+    exp_mode = 'multi'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
-        # exp='single',
-        exp='multi',
-        # exp='last-week',
+        exp=exp_mode
     )
 
     for TRAIN_DAYS, VAL_DAYS, TEST_DAYS in zip(
@@ -136,7 +136,7 @@ if __name__ == "__main__":
         optimizer = "adagrad"
         learning_rate = 1e-2
         shuffle = True
-        save_path = f'sub/sub_{model_name}_'\
+        save_path = f'sub/sub_{model_name}_{exp_mode}_'\
             f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
         l2_reg_linear = 0.0
