@@ -306,10 +306,10 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
         help="The tasks of the scripts",
     )
     parser.add_argument(
-        "--pred_save_path",
+        "--pred_save_dir",
         type=str,
-        default="sub/sub_DLRM.csv",
-        help="The save path of the predictions",
+        default="sub/DLRM",
+        help="The save dir of the predictions",
     )
     parser.add_argument(
         "--loss_type",
@@ -710,9 +710,8 @@ def main(argv: List[str]) -> None:
         args.VAL_DAYS = VAL_DAYS
         args.TEST_DAYS = TEST_DAYS
 
-        save_dir = 'sub/DLRM'
-        os.system(f'mkdir -p {save_dir}')
-        args.pred_save_path = f'{save_dir}/sub_DLRM_{exp_mode}_'\
+        os.system(f'mkdir -p {args.pred_save_dir}')
+        args.pred_save_path = f'{args.pred_save_dir}/sub_DLRM_{exp_mode}_'\
             f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
 
         train_dataloader = get_dataloader(args, backend, "train")

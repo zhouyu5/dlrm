@@ -8,9 +8,10 @@ export CUDA_VISIBLE_DEVICES=1
 # export in_memory_binary_criteo_path='/home/vmagent/app/data/recsys2023_process/npy-base'
 export in_memory_binary_criteo_path='/home/vmagent/app/data/recsys2023_process/npy-new-base-leaf-50'
 export WORLD_SIZE=1
-export GLOBAL_BATCH_SIZE=256
+export GLOBAL_BATCH_SIZE=128
 learning_rate=0.01
 epochs=1
+pred_save_dir='sub/DLRM'
 
 
 # --interaction_type=dcn \
@@ -36,8 +37,8 @@ torchrun \
     --learning_rate $learning_rate \
     --allow_tf32 \
     --tasks "train,val,test" \
+    --pred_save_dir $pred_save_dir \
     --interaction_type=dcn \
     --dcn_num_layers=3 \
-    --dcn_low_rank_dim=128 \
-    --shuffle_batches
+    --dcn_low_rank_dim=128 
 
