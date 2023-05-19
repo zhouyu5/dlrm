@@ -9,7 +9,6 @@ import math
 from tensorflow import keras
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
-from dlrm_main import seed_torch
 
 from data.recsys import (
     DEFAULT_CAT_NAMES,
@@ -129,14 +128,13 @@ if __name__ == "__main__":
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        seed_torch(1024)
+        model_name = 'MMoE' # MMoE, PLE
 
-        save_dir = f'sub/{model_name}_no_shuffle'
+        save_dir = f'sub/{model_name}_new_tree_leaf'
         os.system(f'mkdir -p {save_dir}')
         save_path = f'{save_dir}/sub_{model_name}_{exp_mode}_'\
             f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
 
-        model_name = 'MMoE' # MMoE, PLE
         is_save_predict = True
         num_experts = 3
         batch_size = 256
@@ -145,7 +143,7 @@ if __name__ == "__main__":
         optimizer = "adagrad"
         learning_rate = 1e-2
         shuffle = True
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw4'
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
 
