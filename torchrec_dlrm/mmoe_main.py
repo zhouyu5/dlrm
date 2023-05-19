@@ -96,16 +96,19 @@ class ConfigCallback(keras.callbacks.Callback):
 
 def get_exp_days_list(exp='single'):
     print(f'You are choosing exp: {exp}...')
-    if exp == 'single':
-        train_days_list = [range(11, 22)]
-        val_days_list = [range(21, 22)]
-    elif exp == 'multi':
-        train_days_list = [range(val_day-11, val_day) for val_day in range(15, 22)]
-        # train_days_list = [range(0, val_day) for val_day in range(15, 22)]
-        val_days_list = [[val_day] for val_day in range(15, 22)]
-    elif exp == 'last_week':
-        train_days_list = [range(4, 15)]
-        val_days_list = [range(15, 22)]
+    train_days_list = []
+    val_days_list = []
+
+    if 'single' in exp:
+        train_days_list += [range(11, 22)]
+        val_days_list += [range(21, 22)]
+    elif 'multi' in exp:
+        train_days_list += [range(val_day-11, val_day) for val_day in range(15, 22)]
+        # train_days_list += [range(0, val_day) for val_day in range(15, 22)]
+        val_days_list += [[val_day] for val_day in range(15, 22)]
+    elif 'last_week' in exp:
+        train_days_list += [range(4, 15)]
+        val_days_list += [range(15, 22)]
     else:
         raise NotImplementedError
 
@@ -119,7 +122,7 @@ if __name__ == "__main__":
     ########################################### 0. prepare params ###########################################
     # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
     # single, multi, last_week
-    exp_mode = 'multi'
+    exp_mode = 'single'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -130,20 +133,20 @@ if __name__ == "__main__":
 
         model_name = 'MMoE' # MMoE, PLE
 
-        save_dir = f'sub/{model_name}_new_tree_leaf'
+        save_dir = f'sub/{model_name}_new_tree_100_leaf_4expert'
         os.system(f'mkdir -p {save_dir}')
         save_path = f'{save_dir}/sub_{model_name}_{exp_mode}_'\
             f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
 
         is_save_predict = True
-        num_experts = 3
+        num_experts = 4
         batch_size = 256
         epochs = 1
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
         shuffle = True
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw4'
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw5'
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
 
