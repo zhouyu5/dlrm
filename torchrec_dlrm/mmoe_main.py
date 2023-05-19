@@ -95,11 +95,14 @@ class ConfigCallback(keras.callbacks.Callback):
 
 
 def get_exp_days_list(exp='single'):
+    # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
     print(f'You are choosing exp: {exp}...')
     train_days_list = []
     val_days_list = []
 
     if 'single' in exp:
+        stop_day_list = list(range(0, 3)) + list(range(4, 8)) + [14, 18, 19, 20]
+        # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
         train_days_list += [range(11, 22)]
         val_days_list += [range(21, 22)]
     elif 'multi' in exp:
@@ -120,7 +123,6 @@ def get_exp_days_list(exp='single'):
 if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     ########################################### 0. prepare params ###########################################
-    # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
     # single, multi, last_week
     exp_mode = 'single'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
@@ -133,13 +135,13 @@ if __name__ == "__main__":
 
         model_name = 'MMoE' # MMoE, PLE
 
-        save_dir = f'sub/{model_name}_new_tree_100_leaf_4expert'
+        save_dir = f'sub/{model_name}_new_tree_100_leaf'
         os.system(f'mkdir -p {save_dir}')
         save_path = f'{save_dir}/sub_{model_name}_{exp_mode}_'\
             f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
 
         is_save_predict = True
-        num_experts = 4
+        num_experts = 3
         batch_size = 256
         epochs = 1
         # adagrad, adam, rmsprop
