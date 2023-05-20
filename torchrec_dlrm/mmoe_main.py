@@ -9,6 +9,7 @@ import math
 from tensorflow import keras
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
+from models import MMOE2
 
 from data.recsys import (
     DEFAULT_CAT_NAMES,
@@ -124,7 +125,7 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
-    exp_mode = 'single'
+    exp_mode = 'multi,last_week'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -133,24 +134,24 @@ if __name__ == "__main__":
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE' # MMoE, PLE
+        model_name = 'MMoE2' # MMoE, PLE
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
+        save_dir = f'sub/{model_name}'
+        shuffle = True
 
-        save_dir = f'sub/{model_name}_new_tree_100_leaf'
-        os.system(f'mkdir -p {save_dir}')
-        save_path = f'{save_dir}/sub_{model_name}_{exp_mode}_'\
-            f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
-
-        is_save_predict = True
         num_experts = 3
         batch_size = 256
         epochs = 1
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
-        shuffle = True
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw5'
+        
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
+        is_save_predict = True
+        os.system(f'mkdir -p {save_dir}')
+        save_path = f'{save_dir}/sub_{model_name}_{exp_mode}_'\
+            f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
 
         sparse_features = DEFAULT_CAT_NAMES
         dense_features = DEFAULT_INT_NAMES
@@ -192,6 +193,15 @@ if __name__ == "__main__":
 
         if model_name == 'MMoE':
             model = MMOE(
+                dnn_feature_columns, 
+                num_experts=num_experts,
+                task_types=['binary', 'binary'],
+                l2_reg_linear=l2_reg_linear,
+                l2_reg_embedding=l2_reg_embedding,
+                task_names=target, device=device
+            )
+        elif model_name == 'MMoE2':
+            model = MMOE2(
                 dnn_feature_columns, 
                 num_experts=num_experts,
                 task_types=['binary', 'binary'],

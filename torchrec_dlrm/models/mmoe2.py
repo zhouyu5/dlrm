@@ -38,10 +38,14 @@ class MMOE2(BaseModel):
                  l2_reg_embedding=0.00001, l2_reg_dnn=0,
                  init_std=0.0001, seed=1024, dnn_dropout=0, dnn_activation='relu', dnn_use_bn=False,
                  task_types=('binary', 'binary'), task_names=('ctr', 'ctcvr'), device='cpu', gpus=None):
-        super(MMOE, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
+        super(MMOE2, self).__init__(linear_feature_columns=[], dnn_feature_columns=dnn_feature_columns,
                                    l2_reg_linear=l2_reg_linear, l2_reg_embedding=l2_reg_embedding, init_std=init_std,
                                    seed=seed, device=device, gpus=gpus)
         self.num_tasks = len(task_names)
+
+        assert len(tower_dnn_hidden_units) > 0, "tower_dnn_hidden_units "\
+            "size must > 0"
+
         if self.num_tasks <= 1:
             raise ValueError("num_tasks must be greater than 1")
         if num_experts <= 1:
@@ -60,7 +64,6 @@ class MMOE2(BaseModel):
         self.input_dim = self.compute_input_dim(dnn_feature_columns)
         self.expert_dnn_hidden_units = expert_dnn_hidden_units
         self.gate_dnn_hidden_units = gate_dnn_hidden_units
-        self.tower_dnn_hidden_units = tower_dnn_hidden_units
 
         # expert dnn
         self.expert_dnn = nn.ModuleList([DNN(self.input_dim, expert_dnn_hidden_units, activation=dnn_activation,
@@ -80,18 +83,24 @@ class MMOE2(BaseModel):
                        self.num_experts, bias=False) for _ in range(self.num_tasks)])
 
         # tower dnn (task-specific)
-        if len(tower_dnn_hidden_units) > 0:
-            self.tower_dnn = nn.ModuleList(
-                [DNN(expert_dnn_hidden_units[-1], tower_dnn_hidden_units, activation=dnn_activation,
-                     l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
-                     init_std=init_std, device=device) for _ in range(self.num_tasks)])
-            self.add_regularization_weight(
-                filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
-                l2=l2_reg_dnn)
-        self.tower_dnn_final_layer = nn.ModuleList([nn.Linear(
-            tower_dnn_hidden_units[-1] if len(tower_dnn_hidden_units) > 0 else expert_dnn_hidden_units[-1], 1,
-            bias=False)
-                                                    for _ in range(self.num_tasks)])
+        self.tower_dnn = nn.ModuleList(
+            [DNN(expert_dnn_hidden_units[-1], 
+                    tower_dnn_hidden_units, activation=dnn_activation,
+                    l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                    init_std=init_std, device=device)] + \
+            [DNN(expert_dnn_hidden_units[-1] + tower_dnn_hidden_units[-1], 
+                    tower_dnn_hidden_units, activation=dnn_activation,
+                    l2_reg=l2_reg_dnn, dropout_rate=dnn_dropout, use_bn=dnn_use_bn,
+                    init_std=init_std, device=device) for _ in range(self.num_tasks-1)]
+        )
+        self.add_regularization_weight(
+            filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], self.tower_dnn.named_parameters()),
+            l2=l2_reg_dnn)
+            
+        self.tower_dnn_final_layer = nn.ModuleList([
+            nn.Linear(tower_dnn_hidden_units[-1], 1, bias=False)
+            for _ in range(self.num_tasks)
+        ])
 
         self.out = nn.ModuleList([PredictionLayer(task) for task in task_types])
 
@@ -127,12 +136,18 @@ class MMOE2(BaseModel):
         # tower dnn (task-specific)
         task_outs = []
         for i in range(self.num_tasks):
-            if len(self.tower_dnn_hidden_units) > 0:
-                tower_dnn_out = self.tower_dnn[i](mmoe_outs[i])
-                tower_dnn_logit = self.tower_dnn_final_layer[i](tower_dnn_out)
-            else:
-                tower_dnn_logit = self.tower_dnn_final_layer[i](mmoe_outs[i])
+            if i > 0:
+                mmoe_outs[i] = torch.cat(
+                    (mmoe_outs[i], aux_hidden_output), 
+                    -1
+                )
+            tower_dnn_out = self.tower_dnn[i](mmoe_outs[i])
+            tower_dnn_logit = self.tower_dnn_final_layer[i](tower_dnn_out)
             output = self.out[i](tower_dnn_logit)
             task_outs.append(output)
+            if i == 0:
+                aux_hidden_output = tower_dnn_out.clone().detach()
+        
+        task_outs = task_outs[::-1]
         task_outs = torch.cat(task_outs, -1)
         return task_outs
