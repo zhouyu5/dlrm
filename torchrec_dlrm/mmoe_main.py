@@ -106,15 +106,13 @@ def get_exp_days_list(exp='single'):
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
         train_days_list += [range(11, 22)]
         val_days_list += [range(21, 22)]
-    elif 'multi' in exp:
+    if 'multi' in exp:
         train_days_list += [range(val_day-11, val_day) for val_day in range(15, 22)]
         # train_days_list += [range(0, val_day) for val_day in range(15, 22)]
         val_days_list += [[val_day] for val_day in range(15, 22)]
-    elif 'last_week' in exp:
+    if 'last_week' in exp:
         train_days_list += [range(4, 15)]
         val_days_list += [range(15, 22)]
-    else:
-        raise NotImplementedError
 
     test_days_list = [range(22, 23)] * len(train_days_list)
 
@@ -139,6 +137,8 @@ if __name__ == "__main__":
         save_dir = f'sub/{model_name}'
         shuffle = True
 
+        # tower_dnn_hidden_units=(64,)
+        tower_dnn_hidden_units=(64, 32)
         num_experts = 3
         batch_size = 256
         epochs = 1
