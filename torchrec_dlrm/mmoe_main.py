@@ -102,7 +102,7 @@ def get_exp_days_list(exp='single'):
     val_days_list = []
 
     if 'single' in exp:
-        stop_day_list = list(range(0, 3)) + list(range(4, 8)) + [14, 18, 19, 20]
+        stop_day_list = list(range(0, 8)) + [13, 14, 18]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
         train_days_list += [range(11, 22)]
         val_days_list += [range(21, 22)]
@@ -123,7 +123,8 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
-    exp_mode = 'multi,last_week'
+    # exp_mode = 'multi,last_week,single'
+    exp_mode = 'single'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -132,20 +133,20 @@ if __name__ == "__main__":
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE2' # MMoE, PLE
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
-        save_dir = f'sub/{model_name}'
+        model_name = 'MMoE' # MMoE, PLE
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw5'
+        save_dir = f'sub/{model_name}_new_tree_100leaf_4expert'
         shuffle = True
 
-        # tower_dnn_hidden_units=(64,)
-        tower_dnn_hidden_units=(64, 32)
-        num_experts = 3
+        tower_dnn_hidden_units=(64,)
+        # tower_dnn_hidden_units=(64, 32)
+        num_experts = 4
+
         batch_size = 256
         epochs = 1
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
-        
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
         is_save_predict = True
