@@ -123,7 +123,7 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
-    # exp_mode = 'multi,last_week,single'
+    # exp_mode = 'multi,single'
     exp_mode = 'single'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
@@ -133,14 +133,14 @@ if __name__ == "__main__":
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE' # MMoE, PLE
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw5'
-        save_dir = f'sub/{model_name}_new_tree_100leaf_4expert'
+        model_name = 'MMoE2' # MMoE, PLE
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
+        save_dir = f'sub/{model_name}'
         shuffle = True
 
         tower_dnn_hidden_units=(64,)
         # tower_dnn_hidden_units=(64, 32)
-        num_experts = 4
+        num_experts = 3
 
         batch_size = 256
         epochs = 1
@@ -151,7 +151,7 @@ if __name__ == "__main__":
         l2_reg_embedding = 0.0
         is_save_predict = True
         os.system(f'mkdir -p {save_dir}')
-        save_path = f'{save_dir}/sub_{model_name}_{exp_mode}_'\
+        save_path = f'{save_dir}/sub_{model_name}_'\
             f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
 
         sparse_features = DEFAULT_CAT_NAMES
