@@ -195,6 +195,7 @@ if __name__ == "__main__":
             model = MMOE(
                 dnn_feature_columns, 
                 num_experts=num_experts,
+                tower_dnn_hidden_units=tower_dnn_hidden_units,
                 task_types=['binary', 'binary'],
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
@@ -204,6 +205,7 @@ if __name__ == "__main__":
             model = MMOE2(
                 dnn_feature_columns, 
                 num_experts=num_experts,
+                tower_dnn_hidden_units=tower_dnn_hidden_units,
                 task_types=['binary', 'binary'],
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
@@ -212,6 +214,7 @@ if __name__ == "__main__":
         elif model_name == 'PLE':
             model = PLE(
                 dnn_feature_columns, 
+                tower_dnn_hidden_units=tower_dnn_hidden_units,
                 task_types=['binary', 'binary'],
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
