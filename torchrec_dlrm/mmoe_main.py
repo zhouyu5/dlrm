@@ -100,21 +100,23 @@ def get_exp_days_list(exp='single'):
     print(f'You are choosing exp: {exp}...')
     train_days_list = []
     val_days_list = []
+    test_days_list = []
 
     if 'single' in exp:
         stop_day_list = list(range(0, 8)) + [13, 14, 18]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
         train_days_list += [range(11, 22)]
         val_days_list += [range(21, 22)]
+        test_days_list += [range(22, 23)]
     if 'multi' in exp:
         train_days_list += [range(val_day-11, val_day) for val_day in range(15, 22)]
         # train_days_list += [range(0, val_day) for val_day in range(15, 22)]
         val_days_list += [[val_day] for val_day in range(15, 22)]
+        test_days_list += val_days_list
     if 'last_week' in exp:
         train_days_list += [range(4, 15)]
         val_days_list += [range(15, 22)]
-
-    test_days_list = [range(22, 23)] * len(train_days_list)
+        test_days_list += val_days_list
 
     return train_days_list, val_days_list, test_days_list
 
@@ -123,8 +125,8 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
-    # exp_mode = 'multi,single'
-    exp_mode = 'single'
+    exp_mode = 'multi,single'
+    # exp_mode = 'single'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -133,7 +135,7 @@ if __name__ == "__main__":
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE2' # MMoE, PLE
+        model_name = 'MMoE' # MMoE, PLE
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
         save_dir = f'sub/{model_name}'
         shuffle = True
@@ -152,7 +154,7 @@ if __name__ == "__main__":
         is_save_predict = True
         os.system(f'mkdir -p {save_dir}')
         save_path = f'{save_dir}/sub_{model_name}_'\
-            f'train-{TRAIN_DAYS[0]}-{TRAIN_DAYS[-1]}_val-{VAL_DAYS[-1]}.csv'
+            f'test-{TEST_DAYS[-1]+45}.csv'
 
         sparse_features = DEFAULT_CAT_NAMES
         dense_features = DEFAULT_INT_NAMES
