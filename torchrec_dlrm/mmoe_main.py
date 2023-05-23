@@ -102,21 +102,21 @@ def get_exp_days_list(exp='single'):
     val_days_list = []
     test_days_list = []
 
+    if 'multi' in exp:
+        train_days_list += [range(val_day-11, val_day) for val_day in range(15, 22)]
+        # train_days_list += [range(0, val_day) for val_day in range(15, 22)]
+        val_days_list += [[val_day] for val_day in range(15, 22)]
+        test_days_list += [[val_day] for val_day in range(15, 22)]
     if 'single' in exp:
         stop_day_list = list(range(0, 8)) + [13, 14, 18]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
         train_days_list += [range(11, 22)]
         val_days_list += [range(21, 22)]
         test_days_list += [range(22, 23)]
-    if 'multi' in exp:
-        train_days_list += [range(val_day-11, val_day) for val_day in range(15, 22)]
-        # train_days_list += [range(0, val_day) for val_day in range(15, 22)]
-        val_days_list += [[val_day] for val_day in range(15, 22)]
-        test_days_list += val_days_list
     if 'last_week' in exp:
         train_days_list += [range(4, 15)]
         val_days_list += [range(15, 22)]
-        test_days_list += val_days_list
+        test_days_list += [range(15, 22)]
 
     return train_days_list, val_days_list, test_days_list
 
