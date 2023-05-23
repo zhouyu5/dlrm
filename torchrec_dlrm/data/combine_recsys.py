@@ -45,7 +45,7 @@ def parse_args(argv: List[str]) -> argparse.Namespace:
     parser.add_argument(
         "--install_lgb_model_path",
         type=str,
-        default='/home/vmagent/app/data/install_day_45_55.model',
+        default='/home/vmagent/app/data/install_day_53.model',
         help="install GBDT tree model",
     )
     parser.add_argument(

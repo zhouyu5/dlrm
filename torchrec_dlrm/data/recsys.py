@@ -28,7 +28,7 @@ from torchrec.sparse.jagged_tensor import KeyedJaggedTensor
 ###################### change ###################### 
 # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
 DAYS = 23
-LABEL_NAME = 'is_installed,is_clicked'
+LABEL_NAME = 'is_installed,is_clicked,f_0'
 INT_FEATURE_COUNT = 47
 CAT_FEATURE_COUNT = 31
 NUM_EMBEDDINGS_PER_FEAT = '136,5,633,6,5167,1,6,7,3,24,26,329,19,5801,10,49,901,19,55,34,24,4,4,3,2,2,2,2,3,3,4'

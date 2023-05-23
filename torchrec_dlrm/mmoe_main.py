@@ -36,11 +36,10 @@ class EvaluatingCallback(keras.callbacks.Callback):
         test_model_input = self.test_model_input
         target = self.label_list
         i = target.index('is_installed')
-        labels = test[target[i]].values
         pred_ans = self.model.predict(test_model_input, 256)
         num_samples = pred_ans.shape[0]
         pd.DataFrame({
-            'RowId': labels,
+            'RowId': test['f_0'].values,
             'is_clicked': [0.0] * num_samples,
             'is_installed': pred_ans[:, i].round(decimals=5)
         }).to_csv(self.save_path, sep='\t', header=True, index=False)
@@ -108,7 +107,7 @@ def get_exp_days_list(exp='single'):
         val_days_list += [[val_day] for val_day in range(15, 22)]
         test_days_list += [[val_day] for val_day in range(15, 22)]
     if 'single' in exp:
-        stop_day_list = list(range(0, 8)) + [13, 14, 18]
+        stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
         train_days_list += [range(11, 22)]
         val_days_list += [range(21, 22)]
@@ -136,7 +135,7 @@ if __name__ == "__main__":
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
         model_name = 'MMoE' # MMoE, PLE
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw2'
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw7'
         save_dir = f'sub/{model_name}'
         shuffle = True
 
@@ -168,6 +167,7 @@ if __name__ == "__main__":
         train = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in train_data_path), ignore_index=True)
         valid = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in val_data_path), ignore_index=True)
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
+        target = target[:-1]
 
         # 2.count #unique features for each sparse field,and record dense feature field name
         data = pd.concat((train, valid, test), ignore_index=True)
