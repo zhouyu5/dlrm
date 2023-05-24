@@ -142,14 +142,15 @@ if __name__ == "__main__":
         tower_dnn_hidden_units=(64,)
         # tower_dnn_hidden_units=(64, 32)
         num_experts = 3
+        embedding_dim = "auto"
 
         batch_size = 256
         epochs = 1
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
-        l2_reg_linear = 1e-4
-        l2_reg_embedding = 1e-4
+        l2_reg_linear = 0.0
+        l2_reg_embedding = 0.0
         is_save_predict = True
         os.system(f'mkdir -p {save_dir}')
         save_path = f'{save_dir}/sub_{model_name}_'\
@@ -171,7 +172,7 @@ if __name__ == "__main__":
 
         # 2.count #unique features for each sparse field,and record dense feature field name
         data = pd.concat((train, valid, test), ignore_index=True)
-        fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=16)
+        fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
                                 for feat in sparse_features] + [DenseFeat(feat, 1, )
                                                                 for feat in dense_features]
         del data
