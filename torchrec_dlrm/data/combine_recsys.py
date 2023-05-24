@@ -90,7 +90,10 @@ def get_preprocess_df(df, args, output_dir, preprocess=True, label_name='is_inst
     # dense cat feature
     dense_cat_feat_names = [f'cat_f_{i}' for i in range(42, 80)]
     # cat feature
-    category_feat_names = [f'f_{i}' for i in range(2, 33)]
+    category_feat_names = [
+        f'f_{i}' for i in range(2, 33)
+        if i != 7
+    ]
     # binary feat names
     binary_feat_names = [f'f_{i}' for i in range(33, 42)]
 

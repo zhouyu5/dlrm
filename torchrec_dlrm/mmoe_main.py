@@ -134,8 +134,8 @@ if __name__ == "__main__":
         train_days_list, val_days_list, test_days_list):
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE' # MMoE, PLE
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw7'
+        model_name = 'MMoE2' # MMoE, MMoE2, PLE
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw8'
         save_dir = f'sub/{model_name}'
         shuffle = True
 
@@ -148,8 +148,8 @@ if __name__ == "__main__":
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
-        l2_reg_linear = 0.0
-        l2_reg_embedding = 0.0
+        l2_reg_linear = 1e-4
+        l2_reg_embedding = 1e-4
         is_save_predict = True
         os.system(f'mkdir -p {save_dir}')
         save_path = f'{save_dir}/sub_{model_name}_'\
@@ -217,6 +217,7 @@ if __name__ == "__main__":
         elif model_name == 'PLE':
             model = PLE(
                 dnn_feature_columns, 
+                num_levels=3,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
                 task_types=['binary', 'binary'],
                 l2_reg_linear=l2_reg_linear,
