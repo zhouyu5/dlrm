@@ -122,6 +122,8 @@ def group_cat_feat(df_train, df_test=None):
 
 def categorify_cat_feat(df_train, df_test=None):
     def get_cat_id(cat_columns, df_train, is_combine=True, df_test=None):
+        if not cat_columns:
+            return df_train, df_test
         cat_enc = Pipeline(steps=[
             ("imputer", SimpleImputer(strategy="constant", fill_value=-1)),
             (
@@ -160,8 +162,8 @@ def categorify_cat_feat(df_train, df_test=None):
         if column.startswith('gp_cnt')
     ]
     
-    df_train, df_test = get_cat_id(basic_cat_columns, df_train, is_combine=False, df_test=df_test)
-    df_train, df_test = get_cat_id(group_columns, df_train, is_combine=False, df_test=df_test)
+    df_train, df_test = get_cat_id(basic_cat_columns, df_train, is_combine=IS_COMBINE, df_test=df_test)
+    df_train, df_test = get_cat_id(group_columns, df_train, is_combine=IS_COMBINE, df_test=df_test)
     
     return df_train, df_test
 
@@ -365,6 +367,8 @@ def save_output_df(df_train, df_test, test_date, output_dir):
 
     save_cols = label_cols + dense_columns + cat_columns
 
+    print(f'dense columns: {len(dense_columns)}, cat columns: {len(cat_columns)}, total_columns: {save_cols}')
+
     train_save_path = f'{output_dir}/train'
     valid_save_path = f'{output_dir}/valid'
     test_save_path = f'{output_dir}/test'
@@ -389,12 +393,11 @@ def main(argv: List[str]) -> None:
     output_dir = args.output_dir
     os.system(f'mkdir -p {output_dir}')
 
-    test_date = 67
-    train_df, test_df = get_train_test_df(input_dir, test_date)
+    train_df, test_df = get_train_test_df(input_dir, TEST_DATE)
 
     train_df, test_df = get_processed_df(train_df, test_df)
 
-    save_output_df(train_df, test_df, test_date, output_dir)
+    save_output_df(train_df, test_df, TEST_DATE, output_dir)
 
     return
     
@@ -402,9 +405,11 @@ def main(argv: List[str]) -> None:
 if __name__ == "__main__":
     IS_CATEGORIFY = True
     IS_PROCESS_DENSE = True
+    IS_COMBINE = False
+    TEST_DATE = 60
     main(sys.argv[1:])
 
 
 # python data/combine_recsys_2.py \
 #    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw9'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw10'
