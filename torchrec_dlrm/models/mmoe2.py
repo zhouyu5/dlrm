@@ -2,6 +2,9 @@
 
 import torch
 import torch.nn as nn
+import numpy as np
+import torch.utils.data as Data
+from torch.utils.data import DataLoader
 
 from deepctr_torch.models.basemodel import BaseModel
 from deepctr_torch.layers import DNN, PredictionLayer
@@ -109,6 +112,81 @@ class MMOE2(BaseModel):
             self.add_regularization_weight(
                 filter(lambda x: 'weight' in x[0] and 'bn' not in x[0], module.named_parameters()), l2=l2_reg_dnn)
         self.to(device)
+
+
+    def gen_record_emb(self, x, batch_size=256):
+        """
+
+        :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
+        :param batch_size: Integer. If unspecified, it will default to 256.
+        :return: Numpy array(s) of predictions.
+        """
+        model = self.eval()
+        if isinstance(x, dict):
+            x = [x[feature] for feature in self.feature_index]
+        for i in range(len(x)):
+            if len(x[i].shape) == 1:
+                x[i] = np.expand_dims(x[i], axis=1)
+
+        tensor_data = Data.TensorDataset(
+            torch.from_numpy(np.concatenate(x, axis=-1)))
+        test_loader = DataLoader(
+            dataset=tensor_data, shuffle=False, batch_size=batch_size)
+
+        record_embs = []
+        with torch.no_grad():
+            for _, x_test in enumerate(test_loader):
+                x = x_test[0].to(self.device).float()
+
+                record_emb = model.get_tower_output(x).cpu().data.numpy()  # .squeeze()
+                record_embs.append(record_emb)
+
+        return np.concatenate(record_embs, axis=0).astype("float64")
+    
+
+    def get_tower_output(self, X):
+        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
+                                                                                  self.embedding_dict)
+        dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
+
+        # expert dnn
+        expert_outs = []
+        for i in range(self.num_experts):
+            expert_out = self.expert_dnn[i](dnn_input)
+            expert_outs.append(expert_out)
+        expert_outs = torch.stack(expert_outs, 1)  # (bs, num_experts, dim)
+
+        # gate dnn
+        mmoe_outs = []
+        for i in range(self.num_tasks):
+            if len(self.gate_dnn_hidden_units) > 0:
+                gate_dnn_out = self.gate_dnn[i](dnn_input)
+                gate_dnn_out = self.gate_dnn_final_layer[i](gate_dnn_out)
+            else:
+                gate_dnn_out = self.gate_dnn_final_layer[i](dnn_input)
+            gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), expert_outs)  # (bs, 1, dim)
+            mmoe_outs.append(gate_mul_expert.squeeze())
+
+        # tower dnn (task-specific)
+        tower_dnn_outs = []
+        for i in range(self.num_tasks):
+            if i > 0:
+                mmoe_outs[i] = torch.cat(
+                    (mmoe_outs[i], aux_hidden_output), 
+                    -1
+                )
+            tower_dnn_out = self.tower_dnn[i](mmoe_outs[i])
+            tower_dnn_outs.append(tower_dnn_out)
+            if i == 0:
+                aux_hidden_output = tower_dnn_out.clone().detach()
+        
+        tower_dnn_outs = torch.cat(tower_dnn_outs, -1)
+        return tower_dnn_outs
+
+
+    def gen_cat_emb(self, X):
+        pass
+
 
     def forward(self, X):
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,

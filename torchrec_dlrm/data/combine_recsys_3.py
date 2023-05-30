@@ -62,8 +62,8 @@ def get_train_test_df(input_dir, test_date):
         # gp_after_columns = list(map(lambda x: f'gp_{x}', gp_columns))
         # df[gp_after_columns] = df[gp_columns]
 
-        drop_columns = gp_columns + ['f2_4_is_installed_GCE', 'f_7_is_installed_CE']
-            # [column for column in df.columns if column.endswith('CE')]
+        drop_columns = gp_columns + ['f2_4_is_installed_GCE', 'f_7_is_installed_CE'] + \
+            [column for column in df.columns if column.endswith('CE')]
         df = df.drop(drop_columns, axis=1)
         return df
         
