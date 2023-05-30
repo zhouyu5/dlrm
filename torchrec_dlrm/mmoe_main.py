@@ -11,12 +11,6 @@ from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
 from models import MMOE2
 
-from data.recsys import (
-    DEFAULT_CAT_NAMES,
-    DEFAULT_INT_NAMES,
-    LABEL_NAME,
-)
-
 
 class EvaluatingCallback(keras.callbacks.Callback):
     def __init__(self, label_list, valid, val_model_input, 
@@ -124,18 +118,19 @@ if __name__ == "__main__":
     os.environ['CUDA_VISIBLE_DEVICES'] = '1'
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
-    exp_mode = 'multi,single'
-    # exp_mode = 'single'
+    # exp_mode = 'multi,single'
+    exp_mode = 'single'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
 
     for TRAIN_DAYS, VAL_DAYS, TEST_DAYS in zip(
         train_days_list, val_days_list, test_days_list):
+        test_day = TEST_DAYS[-1]
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE2' # MMoE, MMoE2, PLE
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw8'
+        model_name = 'MMoE' # MMoE, MMoE2, PLE
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw9'
         save_dir = f'sub/{model_name}'
         shuffle = True
 
@@ -145,7 +140,7 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 256
-        epochs = 1
+        epochs = 10
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
@@ -154,21 +149,25 @@ if __name__ == "__main__":
         is_save_predict = True
         os.system(f'mkdir -p {save_dir}')
         save_path = f'{save_dir}/sub_{model_name}_'\
-            f'test-{TEST_DAYS[-1]+45}.csv'
+            f'test-{test_day+45}.csv'
+        
+        ########################################### 1. prepare data ###########################################
+        # data format
+        CAT_FEATURE_COUNT = 34
+        INT_FEATURE_COUNT = 78
 
-        sparse_features = DEFAULT_CAT_NAMES
-        dense_features = DEFAULT_INT_NAMES
-        target = LABEL_NAME.split(',')
+        sparse_features = [f"cat_{idx}" for idx in range(CAT_FEATURE_COUNT)]
+        dense_features = [f"int_{idx}" for idx in range(INT_FEATURE_COUNT)]
+        target = 'is_installed,is_clicked,f_0,f_1'.split(',')
 
-        # 1. prepare data
-        train_data_path = [f'{input_data_dir}/day_{i}' for i in TRAIN_DAYS]
-        val_data_path = [f'{input_data_dir}/day_{i}' for i in VAL_DAYS]
-        test_data_path = [f'{input_data_dir}/day_{i}' for i in TEST_DAYS]
-        feat_colunms = target + DEFAULT_INT_NAMES + DEFAULT_CAT_NAMES
+        train_data_path = [f'{input_data_dir}/train']
+        val_data_path = [f'{input_data_dir}/valid']
+        test_data_path = [f'{input_data_dir}/test']
+        feat_colunms = target + dense_features + sparse_features
         train = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in train_data_path), ignore_index=True)
         valid = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in val_data_path), ignore_index=True)
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
-        target = target[:-1]
+        target = target[:-2]
 
         # 2.count #unique features for each sparse field,and record dense feature field name
         data = pd.concat((train, valid, test), ignore_index=True)
@@ -229,7 +228,7 @@ if __name__ == "__main__":
             raise NotImplementedError
 
         model.compile(optimizer, loss=["binary_crossentropy", "binary_crossentropy"],
-                    metrics=['binary_crossentropy'], )
+                    metrics=[], )
         
         evaluate_callback = EvaluatingCallback(
             target, valid, val_model_input, 
