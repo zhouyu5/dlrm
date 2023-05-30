@@ -129,8 +129,8 @@ if __name__ == "__main__":
         test_day = TEST_DAYS[-1]
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE' # MMoE, MMoE2, PLE
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw9'
+        model_name = 'MMoE2' # MMoE, MMoE2, PLE
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw11'
         save_dir = f'sub/{model_name}'
         shuffle = True
 
@@ -153,8 +153,8 @@ if __name__ == "__main__":
         
         ########################################### 1. prepare data ###########################################
         # data format
-        CAT_FEATURE_COUNT = 34
-        INT_FEATURE_COUNT = 78
+        CAT_FEATURE_COUNT = 30
+        INT_FEATURE_COUNT = 47
 
         sparse_features = [f"cat_{idx}" for idx in range(CAT_FEATURE_COUNT)]
         dense_features = [f"int_{idx}" for idx in range(INT_FEATURE_COUNT)]
@@ -169,12 +169,14 @@ if __name__ == "__main__":
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
         target = target[:-2]
 
+        ### filter data
+        train = train.loc[train['f_1'].isin(range(50, 60))]
+
         # 2.count #unique features for each sparse field,and record dense feature field name
-        data = pd.concat((train, valid, test), ignore_index=True)
+        data = pd.concat((train, test), ignore_index=True)
         fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
                                 for feat in sparse_features] + [DenseFeat(feat, 1, )
                                                                 for feat in dense_features]
-        del data
 
         dnn_feature_columns = fixlen_feature_columns
         linear_feature_columns = fixlen_feature_columns
