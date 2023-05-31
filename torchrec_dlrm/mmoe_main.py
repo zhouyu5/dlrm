@@ -14,18 +14,21 @@ from models import MMOE2
 
 class EvaluatingCallback(keras.callbacks.Callback):
     def __init__(self, label_list, feature_names,
-                 valid, val_model_input, 
-                 test=None, test_model_input=None,
-                 all_data=None, 
+                 train=None, valid=None, test=None, 
                  pred_save_path=None, emb_save_dir=None,
                 ):
         self.label_list = label_list
         self.feature_names = feature_names
         self.valid = valid
         self.test = test
-        self.all_data = all_data
-        self.val_model_input = val_model_input
-        self.test_model_input = test_model_input
+        self.val_model_input = None
+        if valid is not None:
+            self.val_model_input = {name: valid[name] for name in feature_names}
+        self.test_model_input = None
+        self.all_data = train
+        if test is not None:
+            self.all_data = pd.concat((train, test), ignore_index=True)
+            self.test_model_input = {name: test[name] for name in feature_names}
         self.pred_save_path = pred_save_path
         self.emb_save_dir = emb_save_dir
 
@@ -67,7 +70,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
         print("########################################################")
 
     def export_embedding(self, row_id, model_input, emb_save_path):
-        print(f'begin export embeddings...')
+        print(f'begin export embeddings to {emb_save_path}...')
         df = pd.DataFrame({
             'f_0': row_id,
         })
@@ -81,18 +84,13 @@ class EvaluatingCallback(keras.callbacks.Callback):
 
     def on_train_end(self, logs=None):
         if self.emb_save_dir:
-            interval_list = [
-                range(45, 52),
-                range(52, 60),
-                range(60, 68)
-            ]
-            for i, interval in enumerate(interval_list):
+            for day in sorted(self.all_data['f_1'].unique()):
                 data = self.all_data.loc[
-                    self.all_data['f_1'].isin(interval)
+                    self.all_data['f_1'] == day
                 ]
                 row_id = data['f_0'].values
                 model_input = {name: data[name] for name in self.feature_names}
-                emb_save_path = f'{emb_save_dir}/part-{i}'
+                emb_save_path = f'{emb_save_dir}/day_{day}.csv'
                 self.export_embedding(row_id, model_input, emb_save_path)
 
 
@@ -146,6 +144,7 @@ def get_exp_days_list(exp='single'):
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
         train_days_list += [range(51, 60)]
+        # train_days_list += [range(45, 60)]
         val_days_list += [[60]]
         test_days_list += [[60]]
     if 'last_week' in exp:
@@ -177,7 +176,7 @@ if __name__ == "__main__":
         save_dir = f'sub/{model_name}'
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
             f'test-{test_day}.csv'
-        emb_save_dir = f'{save_dir}/DNN_emb/test-{test_day}'
+        emb_save_dir = f'{save_dir}/DNN_emb/test-{test_day}-short'
         # emb_save_dir = None
         shuffle = True
 
@@ -217,7 +216,6 @@ if __name__ == "__main__":
         else:
             valid = None
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
-        all_data = pd.concat((train, test), ignore_index=True)
         target = target[:-2]
 
         ### filter data
@@ -238,12 +236,7 @@ if __name__ == "__main__":
 
         # 3.generate input data for model
         train_model_input = {name: train[name] for name in feature_names}
-        if valid is not None:
-            val_model_input = {name: valid[name] for name in feature_names}
-        else:
-            val_model_input = None
-        test_model_input = {name: test[name] for name in feature_names}
-
+        
         # 4.Define Model,train,predict and evaluate
         device = 'cpu'
         use_cuda = True
@@ -289,9 +282,7 @@ if __name__ == "__main__":
         
         evaluate_callback = EvaluatingCallback(
             target, feature_names,
-            valid, val_model_input,
-            test, test_model_input, 
-            all_data, 
+            train, valid, test, 
             pred_save_path, emb_save_dir,
         )
         config_callback = ConfigCallback(
