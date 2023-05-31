@@ -40,8 +40,8 @@ class EvaluatingCallback(keras.callbacks.Callback):
             'is_clicked': [0.0] * num_samples,
             'is_installed': pred_ans[:, i].round(decimals=5)
         }).to_csv(self.pred_save_path, sep='\t', header=True, index=False)
-        
-    def on_epoch_end(self, epoch, logs=None):
+
+    def evaluate_valid(self):
         def H(p):
             return -p*math.log(p) - (1-p)*math.log(1-p)
         valid = self.valid
@@ -58,6 +58,10 @@ class EvaluatingCallback(keras.callbacks.Callback):
             print("%s valid NCELoss" % target_name, round(nce_loss, 4))
             print("%s valid LogLoss" % target_name, round(bce_loss, 4))
             print("%s valid AUC" % target_name, round(roc_auc_score(valid[target[i]].values, pred_ans[:, i]), 4))
+        
+    def on_epoch_end(self, epoch, logs=None):
+        if self.valid is not None:
+            self.evaluate_valid()
         if self.pred_save_path:
             self.save_predict(self.test, self.test_model_input)
         print("########################################################")
@@ -122,7 +126,8 @@ def get_exp_days_list(exp='single'):
     if 'day67' in exp:
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(67) if day not in stop_day_list]]
-        train_days_list += [range(58, 67)]
+        minus_day = 11
+        train_days_list += [range(67-minus_day, 67)]
         val_days_list += [[66]]
         test_days_list += [[67]]
     if 'day60' in exp:
@@ -154,14 +159,14 @@ if __name__ == "__main__":
         test_day = TEST_DAYS[-1]
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE' # MMoE, MMoE2, PLE
+        model_name = 'MMoE2' # MMoE, MMoE2, PLE
         
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw11'
         save_dir = f'sub/{model_name}'
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
             f'test-{test_day}.csv'
-        # emb_save_path = f'{save_dir}/row_emb-{test_day}.csv'
-        emb_save_path = None
+        emb_save_path = f'{save_dir}/row_emb-{test_day}.csv'
+        # emb_save_path = None
         shuffle = True
 
         tower_dnn_hidden_units=(64,)
@@ -192,7 +197,10 @@ if __name__ == "__main__":
         test_data_path = [f'{input_data_dir}/test']
         feat_colunms = target + dense_features + sparse_features
         train = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in train_data_path), ignore_index=True)
-        valid = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in val_data_path), ignore_index=True)
+        if test_day < 67:
+            valid = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in val_data_path), ignore_index=True)
+        else:
+            valid = None
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
         all_data = pd.concat((train, test), ignore_index=True)
         target = target[:-2]
@@ -215,7 +223,10 @@ if __name__ == "__main__":
 
         # 3.generate input data for model
         train_model_input = {name: train[name] for name in feature_names}
-        val_model_input = {name: valid[name] for name in feature_names}
+        if valid is not None:
+            val_model_input = {name: valid[name] for name in feature_names}
+        else:
+            val_model_input = None
         test_model_input = {name: test[name] for name in feature_names}
         all_model_input = {name: all_data[name] for name in feature_names}
 
