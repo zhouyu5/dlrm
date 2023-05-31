@@ -157,9 +157,14 @@ if __name__ == "__main__":
         test_day = TEST_DAYS[-1]
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
-        model_name = 'MMoE2' # MMoE, MMoE2, PLE
+        model_name = 'MMoE' # MMoE, MMoE2, PLE
+        
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw11'
         save_dir = f'sub/{model_name}'
+        pred_save_path = f'{save_dir}/sub_{model_name}_'\
+            f'test-{test_day}.csv'
+        # emb_save_path = f'{save_dir}/row_emb-{test_day}.csv'
+        emb_save_path = None
         shuffle = True
 
         tower_dnn_hidden_units=(64,)
@@ -175,9 +180,6 @@ if __name__ == "__main__":
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
         os.system(f'mkdir -p {save_dir}')
-        pred_save_path = f'{save_dir}/sub_{model_name}_'\
-            f'test-{test_day}.csv'
-        emb_save_path = f'{save_dir}/row_emb-{test_day}.csv'
         
         ########################################### 1. prepare data ###########################################
         # data format
@@ -198,8 +200,8 @@ if __name__ == "__main__":
         target = target[:-2]
 
         ### filter data
-        data = pd.concat((train, test), ignore_index=True)
         train = train.loc[train['f_1'].isin(TRAIN_DAYS)]
+        data = pd.concat((train, test), ignore_index=True)
 
         # 2.count #unique features for each sparse field,and record dense feature field name
         fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
