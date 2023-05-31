@@ -13,21 +13,21 @@ from models import MMOE2
 
 
 class EvaluatingCallback(keras.callbacks.Callback):
-    def __init__(self, label_list, 
+    def __init__(self, label_list, feature_names,
                  valid, val_model_input, 
                  test=None, test_model_input=None,
-                 all_data=None, all_model_input=None,
-                 pred_save_path=None, emb_save_path=None,
+                 all_data=None, 
+                 pred_save_path=None, emb_save_dir=None,
                 ):
         self.label_list = label_list
+        self.feature_names = feature_names
         self.valid = valid
         self.test = test
         self.all_data = all_data
         self.val_model_input = val_model_input
         self.test_model_input = test_model_input
-        self.all_model_input = all_model_input
         self.pred_save_path = pred_save_path
-        self.emb_save_path = emb_save_path
+        self.emb_save_dir = emb_save_dir
 
     def save_predict(self, test, test_model_input):
         print(f'begin save predictions...')
@@ -66,22 +66,34 @@ class EvaluatingCallback(keras.callbacks.Callback):
             self.save_predict(self.test, self.test_model_input)
         print("########################################################")
 
-    def export_embedding(self):
+    def export_embedding(self, row_id, model_input, emb_save_path):
         print(f'begin export embeddings...')
         df = pd.DataFrame({
-            'f_0': self.all_data['f_0'].values,
+            'f_0': row_id,
         })
         record_emb_array = self.model.gen_record_emb(
-            self.all_model_input, 256
+            model_input, 256
         )
         emb_columns = [f'emb_{i}' for i in range(128)]
         df[emb_columns] = record_emb_array.round(decimals=5)
-        df.to_csv(self.emb_save_path, sep='\t', header=True, index=False)
+        df.to_csv(emb_save_path, sep='\t', header=True, index=False)
         print("########################################################")
 
     def on_train_end(self, logs=None):
-        if self.emb_save_path:
-            self.export_embedding()
+        if self.emb_save_dir:
+            interval_list = [
+                range(45, 52),
+                range(52, 60),
+                range(60, 68)
+            ]
+            for i, interval in enumerate(interval_list):
+                data = self.all_data.loc[
+                    self.all_data['f_1'].isin(interval)
+                ]
+                row_id = data['f_0'].values
+                model_input = {name: data[name] for name in self.feature_names}
+                emb_save_path = f'{emb_save_dir}/part-{i}'
+                self.export_embedding(row_id, model_input, emb_save_path)
 
 
 class ConfigCallback(keras.callbacks.Callback):
@@ -165,8 +177,8 @@ if __name__ == "__main__":
         save_dir = f'sub/{model_name}'
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
             f'test-{test_day}.csv'
-        emb_save_path = f'{save_dir}/row_emb-{test_day}.csv'
-        # emb_save_path = None
+        emb_save_dir = f'{save_dir}/DNN_emb/test-{test_day}'
+        # emb_save_dir = None
         shuffle = True
 
         tower_dnn_hidden_units=(64,)
@@ -181,7 +193,10 @@ if __name__ == "__main__":
         learning_rate = 1e-2
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
-        os.system(f'mkdir -p {save_dir}')
+        if save_dir:
+            os.system(f'mkdir -p {save_dir}')
+        if emb_save_dir:
+            os.system(f'mkdir -p {emb_save_dir}')
         
         ########################################### 1. prepare data ###########################################
         # data format
@@ -228,7 +243,6 @@ if __name__ == "__main__":
         else:
             val_model_input = None
         test_model_input = {name: test[name] for name in feature_names}
-        all_model_input = {name: all_data[name] for name in feature_names}
 
         # 4.Define Model,train,predict and evaluate
         device = 'cpu'
@@ -274,11 +288,11 @@ if __name__ == "__main__":
                     metrics=[], )
         
         evaluate_callback = EvaluatingCallback(
-            target, 
+            target, feature_names,
             valid, val_model_input,
             test, test_model_input, 
-            all_data, all_model_input,
-            pred_save_path, emb_save_path,
+            all_data, 
+            pred_save_path, emb_save_dir,
         )
         config_callback = ConfigCallback(
             optimizer, learning_rate
