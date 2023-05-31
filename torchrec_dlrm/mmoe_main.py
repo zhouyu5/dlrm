@@ -112,27 +112,32 @@ class ConfigCallback(keras.callbacks.Callback):
 
 
 def get_exp_days_list(exp='single'):
-    # day60: 15, day61: 16, day 62: 17, day 63: 18, day 64: 19, day 65: 20, day66: 21
     print(f'You are choosing exp: {exp}...')
     train_days_list = []
     val_days_list = []
     test_days_list = []
 
     if 'multi' in exp:
-        train_days_list += [range(val_day-11, val_day) for val_day in range(15, 22)]
-        # train_days_list += [range(0, val_day) for val_day in range(15, 22)]
-        val_days_list += [[val_day] for val_day in range(15, 22)]
-        test_days_list += [[val_day] for val_day in range(15, 22)]
-    if 'single' in exp:
-        stop_day_list = [6, 2, 14, 0, 1, 18, 5]
+        train_days_list += [range(val_day-11, val_day) for val_day in range(60, 67)]
+        # train_days_list += [range(0, val_day) for val_day in range(60, 67)]
+        val_days_list += [[val_day] for val_day in range(60, 67)]
+        test_days_list += [[val_day] for val_day in range(60, 67)]
+    if 'day67' in exp:
+        # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
+        # train_days_list += [[day for day in range(67) if day not in stop_day_list]]
+        train_days_list += [range(58, 67)]
+        val_days_list += [[66]]
+        test_days_list += [[67]]
+    if 'day60' in exp:
+        # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
-        train_days_list += [range(11, 22)]
-        val_days_list += [range(21, 22)]
-        test_days_list += [range(22, 23)]
+        train_days_list += [range(51, 60)]
+        val_days_list += [[60]]
+        test_days_list += [[60]]
     if 'last_week' in exp:
-        train_days_list += [range(4, 15)]
-        val_days_list += [range(15, 22)]
-        test_days_list += [range(15, 22)]
+        train_days_list += [range(49, 60)]
+        val_days_list += [range(60, 67)]
+        test_days_list += [range(60, 67)]
 
     return train_days_list, val_days_list, test_days_list
 
@@ -142,7 +147,7 @@ if __name__ == "__main__":
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
     # exp_mode = 'multi,single'
-    exp_mode = 'single'
+    exp_mode = 'day60'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -171,8 +176,8 @@ if __name__ == "__main__":
         l2_reg_embedding = 0.0
         os.system(f'mkdir -p {save_dir}')
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
-            f'test-{test_day+45}.csv'
-        emb_save_path = f'{save_dir}/row_emb.csv'
+            f'test-{test_day}.csv'
+        emb_save_path = f'{save_dir}/row_emb-{test_day}.csv'
         
         ########################################### 1. prepare data ###########################################
         # data format
@@ -193,10 +198,10 @@ if __name__ == "__main__":
         target = target[:-2]
 
         ### filter data
-        train = train.loc[train['f_1'].isin(range(51, 60))]
+        data = pd.concat((train, test), ignore_index=True)
+        train = train.loc[train['f_1'].isin(TRAIN_DAYS)]
 
         # 2.count #unique features for each sparse field,and record dense feature field name
-        data = pd.concat((train, test), ignore_index=True)
         fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
                                 for feat in sparse_features] + [DenseFeat(feat, 1, )
                                                                 for feat in dense_features]

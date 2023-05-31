@@ -241,11 +241,11 @@ def main(argv: List[str]) -> None:
     
 
 if __name__ == "__main__":
-    TEST_DATE = 60
+    TEST_DATE = 67
     IS_COMBINE = True
     main(sys.argv[1:])
 
 
 # python data/combine_recsys_3.py \
 #    --input_dir '/home/vmagent/app/data/LGBM_FE2' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw11'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw12'
