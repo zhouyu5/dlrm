@@ -13,19 +13,24 @@ from models import MMOE2
 
 
 class EvaluatingCallback(keras.callbacks.Callback):
-    def __init__(self, label_list, valid, val_model_input, 
-                 is_save_predict=False, save_path=None,
-                 test=None, test_model_input=None):
+    def __init__(self, label_list, 
+                 valid, val_model_input, 
+                 test=None, test_model_input=None,
+                 all_data=None, all_model_input=None,
+                 pred_save_path=None, emb_save_path=None,
+                ):
         self.label_list = label_list
         self.valid = valid
         self.test = test
+        self.all_data = all_data
         self.val_model_input = val_model_input
         self.test_model_input = test_model_input
-        self.is_save_predict = is_save_predict
-        self.save_path = save_path
+        self.all_model_input = all_model_input
+        self.pred_save_path = pred_save_path
+        self.emb_save_path = emb_save_path
 
-    def save_predict(self, epoch):
-        print(f'begin save predictions for epoch {epoch}...')
+    def save_predict(self):
+        print(f'begin save predictions...')
         test = self.test
         test_model_input = self.test_model_input
         target = self.label_list
@@ -36,7 +41,8 @@ class EvaluatingCallback(keras.callbacks.Callback):
             'RowId': test['f_0'].values,
             'is_clicked': [0.0] * num_samples,
             'is_installed': pred_ans[:, i].round(decimals=5)
-        }).to_csv(self.save_path, sep='\t', header=True, index=False)
+        }).to_csv(self.pred_save_path, sep='\t', header=True, index=False)
+        print("########################################################")
         
     def on_epoch_end(self, epoch, logs=None):
         def H(p):
@@ -55,9 +61,26 @@ class EvaluatingCallback(keras.callbacks.Callback):
             print("%s valid NCELoss" % target_name, round(nce_loss, 4))
             print("%s valid LogLoss" % target_name, round(bce_loss, 4))
             print("%s valid AUC" % target_name, round(roc_auc_score(valid[target[i]].values, pred_ans[:, i]), 4))
-        if is_save_predict:
-            self.save_predict(epoch=epoch)
         print("########################################################")
+
+    def export_embedding(self):
+        print(f'begin export embeddings...')
+        df = pd.DataFrame({
+            'f_0': self.all_data['f_0'].values,
+        })
+        record_emb_array = self.model.gen_record_emb(
+            self.all_model_input, 256
+        )
+        emb_columns = [f'emb_{i}' for i in range(128)]
+        df[emb_columns] = record_emb_array.round(decimals=5)
+        df.to_csv(self.emb_save_path, sep='\t', header=True, index=False)
+        print("########################################################")
+
+    def on_train_end(self, logs=None):
+        if self.pred_save_path:
+            self.save_predict()
+        if self.emb_save_path:
+            self.export_embedding()
 
 
 class ConfigCallback(keras.callbacks.Callback):
@@ -140,16 +163,16 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 256
-        epochs = 10
+        epochs = 2
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
         l2_reg_linear = 0.0
         l2_reg_embedding = 0.0
-        is_save_predict = True
         os.system(f'mkdir -p {save_dir}')
-        save_path = f'{save_dir}/sub_{model_name}_'\
+        pred_save_path = f'{save_dir}/sub_{model_name}_'\
             f'test-{test_day+45}.csv'
+        emb_save_path = f'{save_dir}/row_emb.csv'
         
         ########################################### 1. prepare data ###########################################
         # data format
@@ -170,7 +193,7 @@ if __name__ == "__main__":
         target = target[:-2]
 
         ### filter data
-        train = train.loc[train['f_1'].isin(range(50, 60))]
+        train = train.loc[train['f_1'].isin(range(51, 60))]
 
         # 2.count #unique features for each sparse field,and record dense feature field name
         data = pd.concat((train, test), ignore_index=True)
@@ -188,6 +211,7 @@ if __name__ == "__main__":
         train_model_input = {name: train[name] for name in feature_names}
         val_model_input = {name: valid[name] for name in feature_names}
         test_model_input = {name: test[name] for name in feature_names}
+        all_model_input = {name: data[name] for name in feature_names}
 
         # 4.Define Model,train,predict and evaluate
         device = 'cpu'
@@ -233,9 +257,11 @@ if __name__ == "__main__":
                     metrics=[], )
         
         evaluate_callback = EvaluatingCallback(
-            target, valid, val_model_input, 
-            is_save_predict, save_path,
-            test, test_model_input
+            target, 
+            valid, val_model_input,
+            test, test_model_input, 
+            data, all_model_input,
+            pred_save_path, emb_save_path,
         )
         config_callback = ConfigCallback(
             optimizer, learning_rate
