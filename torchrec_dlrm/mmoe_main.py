@@ -2,6 +2,7 @@
 import pandas as pd
 import numpy as np
 import torch
+import torch.nn.functional as F
 from sklearn.metrics import log_loss, roc_auc_score
 import sys
 import os
@@ -94,16 +95,14 @@ class EvaluatingCallback(keras.callbacks.Callback):
                 self.export_embedding(row_id, model_input, emb_save_path)
 
 
-class ConfigCallback(keras.callbacks.Callback):
-    def __init__(self, optimizer, lr, loss):
-        self.optimizer = optimizer
-        self.lr = lr
-        self.loss = loss
+class CustomizeCompileModel():
+    def __init__(self, model, optimizer, lr, loss, loss_weight_list):
+        self.model = model
+        self.model.optim = self._get_optim(optimizer, lr)
+        self.model.loss_func = self._get_loss_func(loss, loss_weight_list)
     
-    def _get_optim(self):
-        print(f'You are choosing optimizer {self.optimizer}, initial lr: {self.lr}')
-        optimizer = self.optimizer
-        lr = self.lr
+    def _get_optim(self, optimizer, lr):
+        print(f'You are choosing optimizer {optimizer}, initial lr: {lr}')
         if isinstance(optimizer, str):
             if optimizer == "sgd":
                 optim = torch.optim.SGD(self.model.parameters(), lr=lr)
@@ -119,26 +118,30 @@ class ConfigCallback(keras.callbacks.Callback):
             optim = optimizer
         return optim
     
-    def _get_loss_func(self):
-        loss_weight_list = [1, 1]
-        # loss_weight_list = [0.5, 0.5]
-        loss = self.loss
-        print(f'You are choosing loss function: {self.loss}, loss weight: {loss_weight_list}')
+    def _get_loss_func_single(self, loss):
+        if loss == "binary_crossentropy":
+            loss_func = F.binary_cross_entropy
+        elif loss == "mse":
+            loss_func = F.mse_loss
+        elif loss == "mae":
+            loss_func = F.l1_loss
+        else:
+            raise NotImplementedError
+        return loss_func
+    
+    def _get_loss_func(self, loss, loss_weight_list):        
+        print(f'You are choosing loss function: {loss}, loss weight: {loss_weight_list}')
         
         if isinstance(loss, str):
             loss_func = self._get_loss_func_single(loss)
         elif isinstance(loss, list):
             loss_func = [
-                lambda x: self._get_loss_func_single(loss_single)(x) * loss_weight 
+                lambda *args, **kwargs: self._get_loss_func_single(loss_single)(*args, **kwargs) * loss_weight 
                 for loss_single, loss_weight in zip(loss, loss_weight_list)
             ]
         else:
             loss_func = loss
         return loss_func
-    
-    def on_train_begin(self, logs=None):
-        self.model.optim = self._get_optim()
-        self.model.loss_func = self._get_loss_func()
 
 
 def get_exp_days_list(exp='single'):
@@ -192,6 +195,8 @@ if __name__ == "__main__":
 
         model_name = 'MMoE2' # MMoE, MMoE2, PLE
         loss = ["binary_crossentropy", "binary_crossentropy"]
+        loss_weight_list = [1, 1]
+        # loss_weight_list = [0.5, 0.5]
         
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw11'
         save_dir = f'sub/{model_name}'
@@ -299,14 +304,12 @@ if __name__ == "__main__":
             raise NotImplementedError
 
         model.compile(optimizer, loss=loss)
+        CustomizeCompileModel(model, optimizer, learning_rate, loss, loss_weight_list)
         
         evaluate_callback = EvaluatingCallback(
             target, feature_names,
             train, valid, test, 
             pred_save_path, emb_save_dir,
-        )
-        config_callback = ConfigCallback(
-            optimizer, learning_rate, loss
         )
 
         history = model.fit(
@@ -315,7 +318,7 @@ if __name__ == "__main__":
             # validation_data=(val_model_input, valid[target].values),
             shuffle=shuffle,
             callbacks=[
-                evaluate_callback, config_callback
+                evaluate_callback, 
             ],
         )
     
