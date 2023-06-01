@@ -144,7 +144,7 @@ class MMOE2(BaseModel):
         return np.concatenate(record_embs, axis=0).astype("float64")
     
 
-    def get_tower_output(self, X):
+    def gen_mmoe_output(self, X):
         sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
                                                                                   self.embedding_dict)
         dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
@@ -166,6 +166,12 @@ class MMOE2(BaseModel):
                 gate_dnn_out = self.gate_dnn_final_layer[i](dnn_input)
             gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), expert_outs)  # (bs, 1, dim)
             mmoe_outs.append(gate_mul_expert.squeeze())
+        
+        return mmoe_outs
+
+
+    def get_tower_output(self, X):
+        mmoe_outs = self.gen_mmoe_output(X)
 
         # tower dnn (task-specific)
         tower_dnn_outs = []
@@ -189,27 +195,7 @@ class MMOE2(BaseModel):
 
 
     def forward(self, X):
-        sparse_embedding_list, dense_value_list = self.input_from_feature_columns(X, self.dnn_feature_columns,
-                                                                                  self.embedding_dict)
-        dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
-
-        # expert dnn
-        expert_outs = []
-        for i in range(self.num_experts):
-            expert_out = self.expert_dnn[i](dnn_input)
-            expert_outs.append(expert_out)
-        expert_outs = torch.stack(expert_outs, 1)  # (bs, num_experts, dim)
-
-        # gate dnn
-        mmoe_outs = []
-        for i in range(self.num_tasks):
-            if len(self.gate_dnn_hidden_units) > 0:
-                gate_dnn_out = self.gate_dnn[i](dnn_input)
-                gate_dnn_out = self.gate_dnn_final_layer[i](gate_dnn_out)
-            else:
-                gate_dnn_out = self.gate_dnn_final_layer[i](dnn_input)
-            gate_mul_expert = torch.matmul(gate_dnn_out.softmax(1).unsqueeze(1), expert_outs)  # (bs, 1, dim)
-            mmoe_outs.append(gate_mul_expert.squeeze())
+        mmoe_outs = self.gen_mmoe_output(X)
 
         # tower dnn (task-specific)
         task_outs = []
