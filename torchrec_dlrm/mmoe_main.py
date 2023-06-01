@@ -95,11 +95,13 @@ class EvaluatingCallback(keras.callbacks.Callback):
 
 
 class ConfigCallback(keras.callbacks.Callback):
-    def __init__(self, optimizer, lr):
+    def __init__(self, optimizer, lr, loss):
         self.optimizer = optimizer
         self.lr = lr
+        self.loss = loss
     
     def _get_optim(self):
+        print(f'You are choosing optimizer {self.optimizer}, initial lr: {self.lr}')
         optimizer = self.optimizer
         lr = self.lr
         if isinstance(optimizer, str):
@@ -117,9 +119,26 @@ class ConfigCallback(keras.callbacks.Callback):
             optim = optimizer
         return optim
     
+    def _get_loss_func(self):
+        loss_weight_list = [1, 1]
+        # loss_weight_list = [0.5, 0.5]
+        loss = self.loss
+        print(f'You are choosing loss function: {self.loss}, loss weight: {loss_weight_list}')
+        
+        if isinstance(loss, str):
+            loss_func = self._get_loss_func_single(loss)
+        elif isinstance(loss, list):
+            loss_func = [
+                lambda x: self._get_loss_func_single(loss_single)(x) * loss_weight 
+                for loss_single, loss_weight in zip(loss, loss_weight_list)
+            ]
+        else:
+            loss_func = loss
+        return loss_func
+    
     def on_train_begin(self, logs=None):
-        print(f'You are choosing optimizer {self.optimizer}, initial lr: {self.lr}')
         self.model.optim = self._get_optim()
+        self.model.loss_func = self._get_loss_func()
 
 
 def get_exp_days_list(exp='single'):
@@ -138,6 +157,7 @@ def get_exp_days_list(exp='single'):
         # train_days_list += [[day for day in range(67) if day not in stop_day_list]]
         minus_day = 11
         train_days_list += [range(67-minus_day, 67)]
+        # train_days_list += [range(45, 67)]
         val_days_list += [[66]]
         test_days_list += [[67]]
     if 'day60' in exp:
@@ -171,13 +191,14 @@ if __name__ == "__main__":
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
         model_name = 'MMoE2' # MMoE, MMoE2, PLE
+        loss = ["binary_crossentropy", "binary_crossentropy"]
         
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw11'
         save_dir = f'sub/{model_name}'
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
             f'test-{test_day}.csv'
-        emb_save_dir = f'{save_dir}/DNN_emb/test-{test_day}-short'
-        # emb_save_dir = None
+        # emb_save_dir = f'{save_dir}/DNN_emb/test-{test_day}-short'
+        emb_save_dir = None
         shuffle = True
 
         tower_dnn_hidden_units=(64,)
@@ -186,7 +207,7 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 256
-        epochs = 2
+        epochs = 10
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
@@ -277,8 +298,7 @@ if __name__ == "__main__":
         else:
             raise NotImplementedError
 
-        model.compile(optimizer, loss=["binary_crossentropy", "binary_crossentropy"],
-                    metrics=[], )
+        model.compile(optimizer, loss=loss)
         
         evaluate_callback = EvaluatingCallback(
             target, feature_names,
@@ -286,7 +306,7 @@ if __name__ == "__main__":
             pred_save_path, emb_save_dir,
         )
         config_callback = ConfigCallback(
-            optimizer, learning_rate
+            optimizer, learning_rate, loss
         )
 
         history = model.fit(
