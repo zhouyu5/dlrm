@@ -10,16 +10,18 @@ import math
 from tensorflow import keras
 from deepctr_torch.inputs import SparseFeat, DenseFeat, get_feature_names
 from deepctr_torch.models import *
-from models import MMOE2
+from models import MMOE2, MMOE3
 
 
 class EvaluatingCallback(keras.callbacks.Callback):
     def __init__(self, label_list, feature_names,
+                 cat_feature_columns,
                  train=None, valid=None, test=None, 
                  pred_save_path=None, emb_save_dir=None,
                 ):
         self.label_list = label_list
         self.feature_names = feature_names
+        self.cat_feature_columns = cat_feature_columns
         self.valid = valid
         self.test = test
         self.val_model_input = None
@@ -75,13 +77,21 @@ class EvaluatingCallback(keras.callbacks.Callback):
         df = pd.DataFrame({
             'f_0': row_id,
         })
-        record_emb_array = self.model.gen_record_emb(
-            model_input, 256
+
+        # record_emb_array = self.model.gen_record_emb(
+        #     model_input, 256
+        # )
+        # emb_columns = [f'emb_{i}' for i in range(128)]
+
+        record_emb_array = self.model.gen_cat_emb(
+            model_input, self.cat_feature_columns, 256
         )
-        emb_columns = [f'emb_{i}' for i in range(128)]
+        cat_feat_emb_dim = sum([feat.embedding_dim for feat in self.cat_feature_columns])
+        emb_columns = [f'emb_{i}' for i in range(cat_feat_emb_dim)]
+        print(f'\t total cat feature emb dim is {cat_feat_emb_dim}')
+
         df[emb_columns] = record_emb_array.round(decimals=5)
         df.to_csv(emb_save_path, sep='\t', header=True, index=False)
-        print("########################################################")
 
     def on_train_end(self, logs=None):
         if self.emb_save_dir:
@@ -93,6 +103,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
                 model_input = {name: data[name] for name in self.feature_names}
                 emb_save_path = f'{emb_save_dir}/day_{day}.csv'
                 self.export_embedding(row_id, model_input, emb_save_path)
+        print("########################################################")
 
 
 class CustomizeCompileModel():
@@ -183,7 +194,7 @@ if __name__ == "__main__":
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
     # exp_mode = 'multi,single'
-    exp_mode = 'day60'
+    exp_mode = 'day67'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -196,14 +207,14 @@ if __name__ == "__main__":
         model_name = 'MMoE2' # MMoE, MMoE2, PLE
         loss = ["binary_crossentropy", "binary_crossentropy"]
         loss_weight_list = [1, 1]
-        # loss_weight_list = [0.5, 0.5]
+        # loss_weight_list = [0, 1]
         
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw11'
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw12'
         save_dir = f'sub/{model_name}'
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
             f'test-{test_day}.csv'
-        # emb_save_dir = f'{save_dir}/DNN_emb/test-{test_day}-short'
-        emb_save_dir = None
+        emb_save_dir = f'{save_dir}/DNN_cat_emb/test-{test_day}-short'
+        # emb_save_dir = None
         shuffle = True
 
         tower_dnn_hidden_units=(64,)
@@ -212,7 +223,7 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 256
-        epochs = 10
+        epochs = 1
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 1e-2
@@ -252,6 +263,10 @@ if __name__ == "__main__":
         fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
                                 for feat in sparse_features] + [DenseFeat(feat, 1, )
                                                                 for feat in dense_features]
+        cat_feature_columns = [
+            SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
+            for feat in sparse_features
+        ]
         del data
 
         dnn_feature_columns = fixlen_feature_columns
@@ -290,6 +305,16 @@ if __name__ == "__main__":
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
             )
+        elif model_name == 'MMoE3':
+            model = MMOE3(
+                dnn_feature_columns, 
+                num_experts=num_experts,
+                tower_dnn_hidden_units=tower_dnn_hidden_units,
+                task_types=['binary', 'binary'],
+                l2_reg_linear=l2_reg_linear,
+                l2_reg_embedding=l2_reg_embedding,
+                task_names=target, device=device
+            )
         elif model_name == 'PLE':
             model = PLE(
                 dnn_feature_columns, 
@@ -308,6 +333,7 @@ if __name__ == "__main__":
         
         evaluate_callback = EvaluatingCallback(
             target, feature_names,
+            cat_feature_columns,
             train, valid, test, 
             pred_save_path, emb_save_dir,
         )

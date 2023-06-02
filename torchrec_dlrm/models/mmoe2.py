@@ -114,7 +114,7 @@ class MMOE2(BaseModel):
         self.to(device)
 
 
-    def gen_record_emb(self, x, batch_size=256):
+    def gen_emb(self, x, callback, batch_size=256):
         """
 
         :param x: The input data, as a Numpy array (or list of Numpy arrays if the model has multiple inputs).
@@ -138,10 +138,28 @@ class MMOE2(BaseModel):
             for _, x_test in enumerate(test_loader):
                 x = x_test[0].to(self.device).float()
 
-                record_emb = model.get_tower_output(x).cpu().data.numpy()  # .squeeze()
+                record_emb = callback(model, x).cpu().data.numpy()  # .squeeze()
                 record_embs.append(record_emb)
 
         return np.concatenate(record_embs, axis=0).astype("float64")
+    
+
+    def gen_record_emb(self, x, batch_size=256):
+        callback = lambda model, x: model.get_tower_output(x)
+        return self.gen_emb(x, callback, batch_size)
+
+
+    def gen_cat_emb(self, x, cat_feature_columns, batch_size=256):
+        def cat_emb_callback(model, x):
+            sparse_embedding_list, dense_value_list = model.input_from_feature_columns(
+                x, model.cat_feature_columns,
+                model.embedding_dict
+            )
+            dnn_input = combined_dnn_input(sparse_embedding_list, dense_value_list)
+            return dnn_input
+        
+        self.cat_feature_columns = cat_feature_columns
+        return self.gen_emb(x, cat_emb_callback, batch_size)
     
 
     def gen_mmoe_output(self, X):
@@ -188,10 +206,6 @@ class MMOE2(BaseModel):
         
         tower_dnn_outs = torch.cat(tower_dnn_outs, -1)
         return tower_dnn_outs
-
-
-    def gen_cat_emb(self, X):
-        pass
 
 
     def forward(self, X):
