@@ -75,12 +75,15 @@ def get_train_test_df(input_dir, test_date):
 
 
 def get_group_dict():
+    # ToDO: add more groups
     group_dict = {
         'cnt': [
+            ['f_2', 'f_4'],
             ['f_4', 'f_6'],
-            ['f_13', 'f_18'],
-            ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
-            ['f_23', 'f_24', 'f_25', 'f_26', 'f_27', 'f_28', 'f_29'],
+            ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
+            # ['f_13', 'f_18'],
+            # ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
+            # ['f_23', 'f_24', 'f_25', 'f_26', 'f_27', 'f_28', 'f_29'],
             # ['f_43', 'f_51', 'f_58', 'f_59', 'f_64', 'f_65', 'f_66', 'f_67', 'f_68', 'f_69','f_70'],
             # ['f_44', 'f_45', 'f_46','f_47'],
             # ['f_48', 'f_49', 'f_50'],   
@@ -93,9 +96,16 @@ def get_group_dict():
             # ['f_77', 'f_39', 'f_78', 'f_40', 'f_79', 'f_41'],
         ],
         'click': [
-            ['f_2'], 
+            ['f_2', 'f_4'],
             ['f_4', 'f_6'],
-            ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
+            ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
+            # ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
+        ],
+        'install': [
+            ['f_2', 'f_4'],
+            ['f_4', 'f_6'],
+            ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
+            # ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
         ],
     }
     
@@ -133,7 +143,7 @@ def categorify_cat_feat(df_train, df_test=None):
                      # encoded_missing_value=-1,
                      handle_unknown='use_encoded_value',
                      unknown_value=-1,
-                     # min_frequency=2,
+                     min_frequency=1,
                  )
             ),
         ])
@@ -168,16 +178,24 @@ def categorify_cat_feat(df_train, df_test=None):
     return df_train, df_test
 
 
-def onehot_cat_feat(df_train, df_test=None):
+def get_cat_columns_with_cardinality(
+        df_train, cat_columns, cardinality_range=range(3, 1000)):
     num_per_cat_dict_train = {}
-    basic_cat_columns = [f'f_{i}' for i in range(2, 33)]
-    for feat_name in basic_cat_columns:
+    for feat_name in cat_columns:
         num_per_cat_dict_train[feat_name] = df_train[feat_name].nunique()
-     
-    onehot_before_columns = sorted([
+    
+    rt_columns = sorted([
         key for key, value in num_per_cat_dict_train.items() 
-        if 3 <= value < 10
+        if value in cardinality_range
     ])
+    return rt_columns
+
+
+def onehot_cat_feat(df_train, df_test=None):
+    basic_cat_columns = [f'f_{i}' for i in range(2, 33)]
+    onehot_before_columns = get_cat_columns_with_cardinality(
+        df_train, basic_cat_columns, range(3, 10)
+    )
 
     onehot_enc = preprocessing.OneHotEncoder(handle_unknown='ignore')
     onehot_enc.fit(df_train[onehot_before_columns])
@@ -197,21 +215,16 @@ def onehot_cat_feat(df_train, df_test=None):
 
 
 def ce_cat_feat(df_train, df_test=None):    
-    num_per_cat_dict_train = {}
-    basic_cat_columns = [f'f_{i}' for i in range(2, 42)]
     group_columns = [
         column for column in df_train.columns
         if column.startswith('gp_cnt')
     ]
-    all_cat_columns = basic_cat_columns + group_columns
+    all_cat_columns = [f'f_{i}' for i in range(2, 33)] + \
+        group_columns
     
-    for feat_name in all_cat_columns:
-        num_per_cat_dict_train[feat_name] = df_train[feat_name].nunique()
-    
-    ce_columns = sorted([
-        key for key, value in num_per_cat_dict_train.items() 
-        if 3 <= value
-    ])
+    ce_columns = get_cat_columns_with_cardinality(
+        df_train, all_cat_columns, range(3, 1000)
+    )
     ce_after_columns = list(map(lambda x: f'ce_{x}', ce_columns))
     
     # count_enc = CountEncoder(cols=ce_columns, normalize=True)
@@ -234,23 +247,24 @@ def ce_cat_feat(df_train, df_test=None):
 def te_cat_feat(df_train, df_test=None):
     
     for label in ['is_clicked', 'is_installed']:
+
+        te_columns = [f'f_{i}' for i in range(2, 33)]
         if label == 'is_clicked':
             group_prefix = 'gp_click'
         else:
-            group_prefix = 'gp_install'
-            
-        te_columns = [
+            group_prefix = 'gp_install'   
+        te_columns += [
             column for column in df_train.columns
             if column.startswith(group_prefix)
         ]
+
+        te_columns = get_cat_columns_with_cardinality(
+            df_train, te_columns, range(3, 1000)
+        )
+        te_after_columns = list(map(lambda x: f'te_{label}_{x}', te_columns))
         
-        if not te_columns: 
-            continue
-        
-        te_after_columns = list(map(lambda x: f'te_{x}', te_columns))
-        
-        # te_cat_enc = preprocessing.TargetEncoder(random_state=2023)
-        te_cat_enc = TargetEncoder(cols=te_columns, min_samples_leaf=20, smoothing=10)
+        te_cat_enc = preprocessing.TargetEncoder(random_state=2023)
+        # te_cat_enc = TargetEncoder(cols=te_columns, min_samples_leaf=20, smoothing=10)
         
         df_train[te_after_columns] = te_cat_enc.fit_transform(
             df_train[te_columns], df_train[label]
@@ -262,11 +276,10 @@ def te_cat_feat(df_train, df_test=None):
 
 
 def drop_cat_columns(df_train, df_test=None):
-    group_columns = [
+    exclude_columns = [
         column for column in df_train.columns
-        if column.startswith('gp_click')
+        if column.startswith('gp_click') or column.startswith('gp_install')
     ]
-    exclude_columns = group_columns
     
     df_train = df_train.drop(exclude_columns, axis=1)
     if df_test is not None:
@@ -289,36 +302,73 @@ def process_cat_feat(df_train, df_test=None):
     
     df_train, df_test = group_cat_feat(df_train, df_test)
     
-    df_train, df_test = te_cat_feat(df_train, df_test)
-        
     df_train, df_test = ce_cat_feat(df_train, df_test)
+
+    df_train, df_test = te_cat_feat(df_train, df_test)
+
+    # df_train, df_test = onehot_cat_feat(df_train, df_test)
     
     if IS_CATEGORIFY:
         df_train, df_test = categorify_cat_feat(df_train, df_test)
-    
-    # df_train, df_test = onehot_cat_feat(df_train, df_test)
     
     df_train, df_test = drop_cat_columns(df_train, df_test)
         
     return df_train, df_test
 
 
-def min_max_dense_feat(df_train, df_test=None):
-    scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+def scale_dense_feat(df_train, df_test=None, scaler='min-max'):
+    if scaler == 'min-max':
+        scaler = preprocessing.MinMaxScaler(feature_range=(0, 1))
+    elif scaler == 'robust':
+        scaler = preprocessing.RobustScaler(unit_variance=True)
+    elif scaler == 'quantile':
+        scaler = preprocessing.QuantileTransformer(
+            output_distribution="normal",
+            subsample=100000,
+            random_state=2023,
+        )
+    else:
+        raise NotImplementedError
 
-    dense_columns = [f'f_{i}' for i in range(33, 80)] + \
+    dense_columns = [f'f_{i}' for i in range(42, 80)] + \
         [column for column in df_train.columns if column.startswith('ce_')] + \
-        [column for column in df_train.columns if column.startswith('te_')]
-
-    df_train[dense_columns] = scaler.fit_transform(df_train[dense_columns])
+        [column for column in df_train.columns if column.startswith('te_')] + \
+        [column for column in df_train.columns if column.startswith('time_')]
+    
+    if df_test is not None:
+        df_all = pd.concat((df_train, df_test), ignore_index=True)
+        scaler.fit(df_all[dense_columns])
+        del df_all
+    else:
+        scaler.fit(df_train[dense_columns])
+    
+    df_train[dense_columns] = scaler.transform(df_train[dense_columns])
     if df_test is not None:
         df_test[dense_columns] = scaler.transform(df_test[dense_columns])
 
     return df_train, df_test
     
 
-def process_dense_feat(df_train, df_test=None):  
-    df_train, df_test = min_max_dense_feat(df_train, df_test)  
+def get_dow_feat(df):
+    df['time_dow'] = df['f_1'] % 7
+    return df
+
+
+def add_time_feat(df_train, df_test=None):
+    df_train = get_dow_feat(df_train)
+    if df_test is not None:
+        df_test = get_dow_feat(df_test)
+    return df_train, df_test
+
+
+def process_dense_feat(df_train, df_test=None):
+    # step1: add time related feature
+    df_train, df_test = add_time_feat(df_train, df_test)
+
+    # step2: scaling dense feature
+    df_train, df_test = scale_dense_feat(
+        df_train, df_test, 'quantile'
+    )
     return df_train, df_test
     
     
@@ -359,7 +409,8 @@ def save_output_df(df_train, df_test, test_date, output_dir):
 
     dense_columns = [f'f_{i}' for i in range(33, 80)] + \
         [column for column in df_train.columns if column.startswith('ce_')] + \
-        [column for column in df_train.columns if column.startswith('te_')]
+        [column for column in df_train.columns if column.startswith('te_')] + \
+        [column for column in df_train.columns if column.startswith('time_')]
     
     cat_columns = [f'f_{i}' for i in range(2, 7)] + \
         [f'f_{i}' for i in range(8, 33)] + \
@@ -404,12 +455,12 @@ def main(argv: List[str]) -> None:
 
 if __name__ == "__main__":
     IS_CATEGORIFY = True
+    IS_COMBINE = True
     IS_PROCESS_DENSE = True
-    IS_COMBINE = False
     TEST_DATE = 60
     main(sys.argv[1:])
 
 
 # python data/combine_recsys_2.py \
 #    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw10'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw13'
