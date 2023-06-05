@@ -75,7 +75,8 @@ def get_train_test_df(input_dir, test_date):
 
 
 def get_group_dict():
-    # ToDO: add more groups
+    # TODO: add more groups
+    # TODO: improve performance by reduce same group
     group_dict = {
         'cnt': [
             ['f_2', 'f_4'],
@@ -300,11 +301,14 @@ def missing_dense_feat(df_train, df_test=None):
 
 def process_cat_feat(df_train, df_test=None):
     
-    df_train, df_test = group_cat_feat(df_train, df_test)
+    if IS_ADD_GROUP_ID:
+        df_train, df_test = group_cat_feat(df_train, df_test)
     
-    df_train, df_test = ce_cat_feat(df_train, df_test)
+    if IS_CE:
+        df_train, df_test = ce_cat_feat(df_train, df_test)
 
-    df_train, df_test = te_cat_feat(df_train, df_test)
+    if IS_TE:
+        df_train, df_test = te_cat_feat(df_train, df_test)
 
     # df_train, df_test = onehot_cat_feat(df_train, df_test)
     
@@ -363,12 +367,14 @@ def add_time_feat(df_train, df_test=None):
 
 def process_dense_feat(df_train, df_test=None):
     # step1: add time related feature
-    df_train, df_test = add_time_feat(df_train, df_test)
+    if IS_ADD_TIME_FEAT:
+        df_train, df_test = add_time_feat(df_train, df_test)
 
     # step2: scaling dense feature
-    df_train, df_test = scale_dense_feat(
-        df_train, df_test, 'quantile'
-    )
+    if IS_SCALE_DENSE:
+        df_train, df_test = scale_dense_feat(
+            df_train, df_test, SCALE_TYPE
+        )
     return df_train, df_test
     
     
@@ -382,9 +388,8 @@ def get_processed_df(df_train, df_test=None):
     df_train, df_test = process_cat_feat(df_train, df_test)
 
     # step3: process numerical feat
-    if IS_PROCESS_DENSE:
-        print('processing dense feature')
-        df_train, df_test = process_dense_feat(df_train, df_test)
+    print('processing dense feature')
+    df_train, df_test = process_dense_feat(df_train, df_test)
     
     return df_train, df_test
 
@@ -456,7 +461,12 @@ def main(argv: List[str]) -> None:
 if __name__ == "__main__":
     IS_CATEGORIFY = True
     IS_COMBINE = True
-    IS_PROCESS_DENSE = True
+    IS_ADD_GROUP_ID = False
+    IS_CE = False
+    IS_TE = False
+    IS_ADD_TIME_FEAT = False
+    IS_SCALE_DENSE = True
+    SCALE_TYPE = 'quantile'
     TEST_DATE = 60
     main(sys.argv[1:])
 
