@@ -79,9 +79,14 @@ def get_group_dict():
     # TODO: improve performance by reduce same group
     group_dict = {
         'cnt': [
-            ['f_2', 'f_4'],
-            ['f_4', 'f_6'],
-            ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
+            # [
+            #     'f_43', 'f_51', 'f_58', 'f_59', 'f_64', 'f_65', 'f_66',
+            #     'f_67', 'f_68', 'f_69', 'f_70'
+            # ],
+            ['f_2', 'f_4', 'f_16'],
+            # ['f_2', 'f_4'],
+            # ['f_4', 'f_6'],
+            # ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
             # ['f_13', 'f_18'],
             # ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
             # ['f_23', 'f_24', 'f_25', 'f_26', 'f_27', 'f_28', 'f_29'],
@@ -97,15 +102,15 @@ def get_group_dict():
             # ['f_77', 'f_39', 'f_78', 'f_40', 'f_79', 'f_41'],
         ],
         'click': [
-            ['f_2', 'f_4'],
-            ['f_4', 'f_6'],
-            ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
+            # ['f_2', 'f_4'],
+            # ['f_4', 'f_6'],
+            # ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
             # ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
         ],
         'install': [
-            ['f_2', 'f_4'],
-            ['f_4', 'f_6'],
-            ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
+            # ['f_2', 'f_4'],
+            # ['f_4', 'f_6'],
+            # ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
             # ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
         ],
     }
@@ -226,6 +231,9 @@ def ce_cat_feat(df_train, df_test=None):
     ce_columns = get_cat_columns_with_cardinality(
         df_train, all_cat_columns, range(3, 1000)
     )
+    if not ce_columns:
+        return df_train, df_test
+    
     ce_after_columns = list(map(lambda x: f'ce_{x}', ce_columns))
     
     # count_enc = CountEncoder(cols=ce_columns, normalize=True)
@@ -262,6 +270,10 @@ def te_cat_feat(df_train, df_test=None):
         te_columns = get_cat_columns_with_cardinality(
             df_train, te_columns, range(3, 1000)
         )
+
+        if not te_columns:
+            return df_train, df_test
+    
         te_after_columns = list(map(lambda x: f'te_{label}_{x}', te_columns))
         
         te_cat_enc = preprocessing.TargetEncoder(random_state=2023)
@@ -461,7 +473,7 @@ def main(argv: List[str]) -> None:
 if __name__ == "__main__":
     IS_CATEGORIFY = True
     IS_COMBINE = True
-    IS_ADD_GROUP_ID = False
+    IS_ADD_GROUP_ID = True
     IS_CE = False
     IS_TE = False
     IS_ADD_TIME_FEAT = False
@@ -473,4 +485,4 @@ if __name__ == "__main__":
 
 # python data/combine_recsys_2.py \
 #    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw13'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw15'
