@@ -237,35 +237,64 @@ def onehot_cat_feat(df_train, df_test=None):
     return df_train, df_test
 
 
+def ce_cat_feat_with_time_window(
+        ce_columns, 
+        current_date, time_window_list,
+        df_train, df_test
+    ):
+    if not ce_columns:
+        return df_train, df_test
+    
+    df_all = pd.concat((df_train, df_test), ignore_index=True)
+
+    for time_window in time_window_list:
+        df_temp = df_all.loc[
+            df_all['f_1'].isin(
+                range(current_date-time_window+1 , current_date+1)
+            )
+        ]
+
+        ce_after_columns = list(map(lambda x: f'ce_{x}_{time_window}d', ce_columns))
+        # count_enc = CountEncoder(cols=ce_columns, normalize=True)
+        count_enc = CountEncoder(cols=ce_columns)
+        count_enc.fit(df_temp[ce_columns])
+        del df_temp
+        
+        if current_date == TEST_DATE:
+            df_test[ce_after_columns] = \
+                count_enc.transform(df_test[ce_columns])
+        else:
+            df_temp = df_train.loc[
+                df_train['f_1'] == current_date, ce_columns
+            ]
+            df_train.loc[
+                df_train['f_1'] == current_date, ce_after_columns
+            ] = count_enc.transform(df_temp)
+        
+    return df_train, df_test
+
+
 def ce_cat_feat(df_train, df_test=None):    
     group_columns = [
         column for column in df_train.columns
         if column.startswith('gp_cnt')
     ]
-    all_cat_columns = [f'f_{i}' for i in range(2, 33)] + \
+    all_cat_columns = [f'f_{i}' for i in range(2, 42)] + \
         group_columns
     
     ce_columns = get_cat_columns_with_cardinality(
         df_train, all_cat_columns, range(3, 1000)
     )
-    if not ce_columns:
-        return df_train, df_test
-    
-    ce_after_columns = list(map(lambda x: f'ce_{x}', ce_columns))
-    
-    # count_enc = CountEncoder(cols=ce_columns, normalize=True)
-    count_enc = CountEncoder(cols=ce_columns)
-    
-    if df_test is not None:
-        df_all = pd.concat((df_train, df_test), ignore_index=True)
-        count_enc.fit(df_all[ce_columns])
-        del df_all
-    else:
-        count_enc.fit(df_train[ce_columns])
-    
-    df_train[ce_after_columns] = count_enc.transform(df_train[ce_columns])
-    if df_test is not None:
-        df_test[ce_after_columns] = count_enc.transform(df_test[ce_columns])
+
+    time_window_list = [1, 2, 3]
+    total_date = sorted(list(df_train['f_1'].unique()) + [TEST_DATE])
+
+    for current_date in total_date:
+        df_train, df_test = ce_cat_feat_with_time_window(
+            ce_columns, 
+            current_date, time_window_list,
+            df_train, df_test
+        )
         
     return df_train, df_test
 
@@ -274,7 +303,7 @@ def te_cat_feat(df_train, df_test=None):
     
     for label in ['is_clicked', 'is_installed']:
 
-        te_columns = [f'f_{i}' for i in range(2, 33)]
+        te_columns = [f'f_{i}' for i in range(2, 42)]
         if label == 'is_clicked':
             group_prefix = 'gp_click'
         else:
