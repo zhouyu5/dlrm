@@ -424,14 +424,41 @@ def add_time_feat(df_train, df_test=None):
     return df_train, df_test
 
 
+def discre_dense_feat(df_train, df_test=None):
+    
+    dense_columns = [f'f_{i}' for i in range(42, 80)]
+    dense_after_columns = list(map(lambda x: f'bin_{x}', dense_columns))
+    
+    dicre_enc = preprocessing.KBinsDiscretizer(
+        n_bins=100, encode='ordinal', strategy='quantile', subsample=None, random_state=2023
+    )
+    ce_enc = CountEncoder(cols=dense_columns)
+    
+    df_train, df_test = fit_transform(
+        dicre_enc, True, dense_columns, dense_columns, df_train, df_test
+    )
+    
+    group_list = [
+        [f'f_{i}', 'f_1'] for i in range(42, 80)
+    ]
+    df_train, df_test = get_group_column(
+        group_list, df_train, df_test, new_columns_list=dense_columns
+    )
+    df_train, df_test = fit_transform(
+        ce_enc, True, dense_columns, dense_after_columns, df_train, df_test
+    )
+    
+    return df_train, df_test
+
+
 def process_dense_feat(df_train, df_test=None):
     # step1: add time related feature
     if IS_ADD_TIME_FEAT:
         df_train, df_test = add_time_feat(df_train, df_test)
 
     # step2: discretize dense feat
-    # if IS_DISCRE:
-    #     df_train, df_test = discre_dense_feat(df_train, df_test)
+    if IS_DISCRE:
+        df_train, df_test = discre_dense_feat(df_train, df_test)
 
     # step3: scaling dense feature
     if IS_SCALE_DENSE:
