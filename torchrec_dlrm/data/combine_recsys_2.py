@@ -153,6 +153,22 @@ def group_cat_feat(df_train, df_test=None):
     return df_train, df_test
 
 
+def fit_transform(encoder, is_combine, ori_columns, 
+                  after_columns, df_train, df_test=None):
+    if is_combine and df_test is not None:
+        df_all = pd.concat((df_train, df_test), ignore_index=True)
+        encoder.fit(df_all[ori_columns])
+        del df_all
+    else:
+        encoder.fit(df_train[ori_columns])
+    
+    df_train[after_columns] = encoder.transform(df_train[ori_columns])
+    if df_test is not None:
+        df_test[after_columns] = encoder.transform(df_test[ori_columns])
+
+    return df_train, df_test
+
+
 def categorify_cat_feat(df_train, df_test=None):
     def get_cat_id(cat_columns, df_train, is_combine=True, df_test=None):
         if not cat_columns:
@@ -171,16 +187,8 @@ def categorify_cat_feat(df_train, df_test=None):
             ),
         ])
 
-        if is_combine and df_test is not None:
-            df_all = pd.concat((df_train, df_test), ignore_index=True)
-            cat_enc.fit(df_all[cat_columns])
-            del df_all
-        else:
-            cat_enc.fit(df_train[cat_columns])
-
-        df_train[cat_columns] = cat_enc.transform(df_train[cat_columns])
-        if df_test is not None:
-            df_test[cat_columns] = cat_enc.transform(df_test[cat_columns])
+        df_train, df_test = fit_transform(cat_enc, is_combine, cat_columns, 
+                  cat_columns, df_train, df_test)
         
         if not is_combine:
             for column in cat_columns:
@@ -396,17 +404,9 @@ def scale_dense_feat(df_train, df_test=None, scaler='min-max'):
         [column for column in df_train.columns if column.startswith('ce_')] + \
         [column for column in df_train.columns if column.startswith('te_')] + \
         [column for column in df_train.columns if column.startswith('time_')]
-    
-    if df_test is not None:
-        df_all = pd.concat((df_train, df_test), ignore_index=True)
-        scaler.fit(df_all[dense_columns])
-        del df_all
-    else:
-        scaler.fit(df_train[dense_columns])
-    
-    df_train[dense_columns] = scaler.transform(df_train[dense_columns])
-    if df_test is not None:
-        df_test[dense_columns] = scaler.transform(df_test[dense_columns])
+
+    df_train, df_test = fit_transform(scaler, IS_COMBINE, dense_columns, 
+                  dense_columns, df_train, df_test)
 
     return df_train, df_test
     
