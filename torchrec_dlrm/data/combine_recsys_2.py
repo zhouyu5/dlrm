@@ -256,6 +256,7 @@ def ce_cat_feat_with_time_window(
     df_all = pd.concat((df_train, df_test), ignore_index=True)
 
     for time_window in time_window_list:
+        # print(f'current_date: {current_date}, time_window: {time_window}')
         df_temp = df_all.loc[
             df_all['f_1'].isin(
                 range(current_date-time_window+1 , current_date+1)
@@ -270,15 +271,15 @@ def ce_cat_feat_with_time_window(
         
         if current_date == TEST_DATE:
             df_test[ce_after_columns] = \
-                count_enc.transform(df_test[ce_columns])
+                count_enc.transform(df_test[ce_columns]).values
         else:
             df_temp = df_train.loc[
                 df_train['f_1'] == current_date, ce_columns
             ]
             df_train.loc[
                 df_train['f_1'] == current_date, ce_after_columns
-            ] = count_enc.transform(df_temp)
-        
+            ] = count_enc.transform(df_temp).values
+                  
     return df_train, df_test
 
 
