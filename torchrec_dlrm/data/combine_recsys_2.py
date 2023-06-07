@@ -118,20 +118,37 @@ def get_group_dict():
     return group_dict
 
 
-def group_cat_feat(df_train, df_test=None):
-    def get_group_column(df, group):
+def get_group_column(
+        group_list, df_train, df_test, 
+        group_prefix=None, 
+        new_columns_list=[]
+    ):
+    def f(df, group):
         return df.apply(
             lambda x: ','.join(map(str, [float(x[key]) for key in group])),
             axis=1
         )
-    
+    for i, group in enumerate(group_list):
+        if group_prefix is not None:
+            group_name = f'{group_prefix}_{i}'
+        elif new_columns_list:
+            group_name = new_columns_list[i]
+        else:
+            raise NotImplementedError
+        df_train[group_name] = f(df_train, group)
+        if df_test is not None:
+            df_test[group_name] = f(df_test, group)
+
+    return df_train, df_test
+
+
+def group_cat_feat(df_train, df_test=None):
     group_dict = get_group_dict()
     for key, group_list in group_dict.items():
-        for i, group in enumerate(group_list):
-            group_name = f'gp_{key}_{i}'
-            df_train[group_name] = get_group_column(df_train, group)
-            if df_test is not None:
-                df_test[group_name] = get_group_column(df_test, group)
+        group_prefix = f'gp_{key}'
+        df_train, df_test = get_group_column(
+            group_list, df_train, df_test, group_prefix=group_prefix
+        )
             
     return df_train, df_test
 
@@ -382,7 +399,11 @@ def process_dense_feat(df_train, df_test=None):
     if IS_ADD_TIME_FEAT:
         df_train, df_test = add_time_feat(df_train, df_test)
 
-    # step2: scaling dense feature
+    # step2: discretize dense feat
+    # if IS_DISCRE:
+    #     df_train, df_test = discre_dense_feat(df_train, df_test)
+
+    # step3: scaling dense feature
     if IS_SCALE_DENSE:
         df_train, df_test = scale_dense_feat(
             df_train, df_test, SCALE_TYPE
@@ -479,6 +500,7 @@ if __name__ == "__main__":
     IS_ADD_TIME_FEAT = False
     IS_SCALE_DENSE = True
     SCALE_TYPE = 'quantile'
+    IS_DISCRE = False
     TEST_DATE = 60
     main(sys.argv[1:])
 
