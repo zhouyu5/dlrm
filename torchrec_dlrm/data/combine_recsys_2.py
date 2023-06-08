@@ -248,7 +248,8 @@ def onehot_cat_feat(df_train, df_test=None):
 def ce_cat_feat_with_time_window(
         ce_columns, 
         current_date, time_window_list,
-        df_train, df_test
+        df_train, df_test,
+        inclusive=False
     ):
     if not ce_columns:
         return df_train, df_test
@@ -257,11 +258,12 @@ def ce_cat_feat_with_time_window(
 
     for time_window in time_window_list:
         # print(f'current_date: {current_date}, time_window: {time_window}')
-        df_temp = df_all.loc[
-            df_all['f_1'].isin(
-                range(current_date-time_window+1 , current_date+1)
-            )
-        ]
+        if inclusive:
+            date_range = range(current_date-time_window+1 , current_date+1)
+        else:
+            date_range = range(current_date-time_window , current_date)
+
+        df_temp = df_all.loc[df_all['f_1'].isin(date_range)]
 
         ce_after_columns = list(map(lambda x: f'ce_{x}_{time_window}d', ce_columns))
         # count_enc = CountEncoder(cols=ce_columns, normalize=True)
