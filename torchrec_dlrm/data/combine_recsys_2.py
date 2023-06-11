@@ -239,15 +239,17 @@ def ce_cat_feat_with_time_window(
         ce_columns, 
         current_date, time_window_list,
         df_train, df_test,
-        inclusive=False
+        inclusive=False,
+        verbose=False
     ):
     if not ce_columns:
         return df_train, df_test
     
     df_all = pd.concat((df_train, df_test), ignore_index=True)
 
-    for time_window in time_window_list:
-        # print(f'current_date: {current_date}, time_window: {time_window}')
+    for time_window in sorted(time_window_list):
+        if verbose:
+            print(f'current_date: {current_date}, time_window: {time_window}')
         if inclusive:
             date_range = range(current_date-time_window+1 , current_date+1)
         else:
@@ -339,9 +341,10 @@ def te_cat_feat(df_train, df_test=None):
 
 
 def drop_cat_columns(df_train, df_test=None):
+    drop_columns_prefix_tuple = ('gp_click', 'gp_install')
     exclude_columns = [
         column for column in df_train.columns
-        if column.startswith('gp_click') or column.startswith('gp_install')
+        if column.startswith(drop_columns_prefix_tuple)
     ]
     
     df_train = df_train.drop(exclude_columns, axis=1)
@@ -430,7 +433,7 @@ def discre_dense_feat(df_train, df_test=None):
     ce_enc = CountEncoder(cols=dense_columns)
     
     df_train, df_test = fit_transform(
-        dicre_enc, True, dense_columns, dense_columns, df_train, df_test
+        dicre_enc, IS_COMBINE, dense_columns, dense_columns, df_train, df_test
     )
     
     group_list = [
@@ -440,7 +443,7 @@ def discre_dense_feat(df_train, df_test=None):
         group_list, df_train, df_test, new_columns_list=dense_columns
     )
     df_train, df_test = fit_transform(
-        ce_enc, True, dense_columns, dense_after_columns, df_train, df_test
+        ce_enc, IS_COMBINE, dense_columns, dense_after_columns, df_train, df_test
     )
     
     return df_train, df_test
@@ -545,8 +548,8 @@ def main(argv: List[str]) -> None:
 
 if __name__ == "__main__":
     IS_CATEGORIFY = True
-    IS_COMBINE = True
-    IS_ADD_GROUP_ID = True
+    IS_COMBINE = False
+    IS_ADD_GROUP_ID = False
     IS_CE = False
     IS_TE = False
     IS_ADD_TIME_FEAT = False
@@ -559,4 +562,4 @@ if __name__ == "__main__":
 
 # python data/combine_recsys_2.py \
 #    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw15'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw16'
