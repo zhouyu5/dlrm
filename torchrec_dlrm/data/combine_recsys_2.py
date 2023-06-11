@@ -255,6 +255,9 @@ def ce_cat_feat_with_time_window(
 
         df_temp = df_all.loc[df_all['f_1'].isin(date_range)]
 
+        if df_temp.empty:
+            return df_train, df_test
+
         ce_after_columns = list(map(lambda x: f'ce_{x}_{time_window}d', ce_columns))
         # count_enc = CountEncoder(cols=ce_columns, normalize=True)
         count_enc = CountEncoder(cols=ce_columns)
