@@ -90,16 +90,6 @@ def get_group_dict():
             # ['f_13', 'f_18'],
             # ['f_2', 'f_19', 'f_20', 'f_21', 'f_22'],
             # ['f_23', 'f_24', 'f_25', 'f_26', 'f_27', 'f_28', 'f_29'],
-            # ['f_43', 'f_51', 'f_58', 'f_59', 'f_64', 'f_65', 'f_66', 'f_67', 'f_68', 'f_69','f_70'],
-            # ['f_44', 'f_45', 'f_46','f_47'],
-            # ['f_48', 'f_49', 'f_50'],   
-            # ['f_71', 'f_33'],
-            # ['f_72', 'f_34'],
-            # ['f_73', 'f_35'],
-            # ['f_74', 'f_36'],
-            # ['f_75', 'f_37'],
-            # ['f_76', 'f_38'],
-            # ['f_77', 'f_39', 'f_78', 'f_40', 'f_79', 'f_41'],
         ],
         'click': [
             # ['f_2', 'f_4'],
@@ -123,11 +113,11 @@ def get_group_column(
         group_prefix=None, 
         new_columns_list=[]
     ):
-    def f(df, group):
-        return df.apply(
-            lambda x: ','.join(map(str, [float(x[key]) for key in group])),
-            axis=1
-        )
+    def f(df, group_columns):
+        rt = df[group_columns[0]].astype(str)
+        for i in range(1, len(group_columns)):
+            rt += ',' + df[group_columns[i]].astype(str)
+        return rt
     for i, group in enumerate(group_list):
         if group_prefix is not None:
             group_name = f'{group_prefix}_{i}'
