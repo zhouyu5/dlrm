@@ -239,6 +239,7 @@ def ce_cat_feat_with_time_window(
         ce_columns, 
         current_date, time_window_list,
         df_train, df_test,
+        normalize=False,
         inclusive=False, cal_avg = True,
         verbose=False
     ):
@@ -261,8 +262,7 @@ def ce_cat_feat_with_time_window(
             return df_train, df_test
 
         ce_after_columns = list(map(lambda x: f'ce_{x}_{time_window}d', ce_columns))
-        # count_enc = CountEncoder(cols=ce_columns, normalize=True)
-        count_enc = CountEncoder(cols=ce_columns)
+        count_enc = CountEncoder(cols=ce_columns, normalize=normalize)
         count_enc.fit(df_temp[ce_columns])
         del df_temp
         
