@@ -239,7 +239,7 @@ def ce_cat_feat_with_time_window(
         ce_columns, 
         current_date, time_window_list,
         df_train, df_test,
-        inclusive=False,
+        inclusive=False, cal_avg = True,
         verbose=False
     ):
     if not ce_columns:
@@ -267,15 +267,18 @@ def ce_cat_feat_with_time_window(
         del df_temp
         
         if current_date == TEST_DATE:
-            df_test[ce_after_columns] = \
-                count_enc.transform(df_test[ce_columns]).values
+            cnt_array = count_enc.transform(df_test[ce_columns]).values
+            if cal_avg:
+                cnt_array = cnt_array / time_window
+            df_test[ce_after_columns] = cnt_array
         else:
             df_temp = df_train.loc[
                 df_train['f_1'] == current_date, ce_columns
             ]
-            df_train.loc[
-                df_train['f_1'] == current_date, ce_after_columns
-            ] = count_enc.transform(df_temp).values
+            cnt_array = count_enc.transform(df_temp).values
+            if cal_avg:
+                cnt_array = cnt_array / time_window
+            df_train.loc[df_train['f_1'] == current_date, ce_after_columns] = cnt_array
                   
     return df_train, df_test
 
