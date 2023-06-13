@@ -283,6 +283,24 @@ def ce_cat_feat_with_time_window(
     return df_train, df_test
 
 
+def ce_cat_feat_with_all_date(
+        ce_columns, 
+        df_train, df_test,
+        normalize=False
+    ):
+    if not ce_columns:
+        return df_train, df_test
+    
+    count_enc = CountEncoder(cols=ce_columns, normalize=normalize, handle_unknown=1)
+    ce_after_columns = list(map(lambda x: f'ce_{x}', ce_columns))
+    df_train, df_test = fit_transform(
+        count_enc, IS_COMBINE, ce_columns, 
+        ce_after_columns, df_train, df_test
+    )
+                  
+    return df_train, df_test
+
+
 def ce_cat_feat(df_train, df_test=None):    
     group_columns = [
         column for column in df_train.columns
@@ -291,6 +309,7 @@ def ce_cat_feat(df_train, df_test=None):
     all_cat_columns = [f'f_{i}' for i in range(2, 42)] + \
         group_columns
     
+    # method 1: time window CE feat
     ce_columns = get_cat_columns_with_cardinality(
         df_train, all_cat_columns, range(3, 1000)
     )
@@ -304,6 +323,12 @@ def ce_cat_feat(df_train, df_test=None):
             current_date, time_window_list,
             df_train, df_test
         )
+
+    # method 2: raw CE feat
+    ce_columns = [f'f_{i}' for i in [2, 4, 6, 15]]
+    df_train, df_test = ce_cat_feat_with_all_date(
+        ce_columns, df_train, df_test
+    )
         
     return df_train, df_test
 
