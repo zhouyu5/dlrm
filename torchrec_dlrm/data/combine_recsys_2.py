@@ -163,8 +163,9 @@ def categorify_cat_feat(df_train, df_test=None):
     def get_cat_id(cat_columns, df_train, is_combine=True, df_test=None):
         if not cat_columns:
             return df_train, df_test
+        fill_value = 0
         cat_enc = Pipeline(steps=[
-            ("imputer", SimpleImputer(strategy="constant", fill_value=-1)),
+            ("imputer", SimpleImputer(strategy="constant", fill_value=fill_value)),
             (
                 "categorify-1", 
                  preprocessing.OrdinalEncoder(
