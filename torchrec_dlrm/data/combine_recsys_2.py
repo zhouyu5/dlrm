@@ -569,7 +569,7 @@ def main(argv: List[str]) -> None:
 if __name__ == "__main__":
     IS_CE = False
     IS_WINDOW_CE = False
-    IS_ADD_TIME_FEAT = True
+    IS_ADD_TIME_FEAT = False
     TEST_DATE = 60
 
     IS_COMBINE = False
