@@ -83,7 +83,7 @@ def get_group_dict():
             #     'f_43', 'f_51', 'f_58', 'f_59', 'f_64', 'f_65', 'f_66',
             #     'f_67', 'f_68', 'f_69', 'f_70'
             # ],
-            ['f_2', 'f_4', 'f_16'],
+            # ['f_2', 'f_4', 'f_16'],
             # ['f_2', 'f_4'],
             # ['f_4', 'f_6'],
             # ['f_2', 'f_4', 'f_6', 'f_16', 'f_20', 'f_21', 'f_22'],
@@ -531,12 +531,12 @@ def save_output_df(df_train, df_test, test_date, output_dir):
 
     dense_columns = [f'f_{i}' for i in range(33, 80)] + \
         [column for column in df_train.columns if column.startswith('ce_')] + \
-        [column for column in df_train.columns if column.startswith('te_')] + \
-        [column for column in df_train.columns if column.startswith('time_')]
+        [column for column in df_train.columns if column.startswith('te_')]
     
     cat_columns = [f'f_{i}' for i in range(2, 7)] + \
         [f'f_{i}' for i in range(8, 33)] + \
-        [column for column in df_train.columns if column.startswith('gp_cnt')]
+        [column for column in df_train.columns if column.startswith('gp_cnt')] + \
+        [column for column in df_train.columns if column.startswith('time_')]
 
     save_cols = label_cols + dense_columns + cat_columns
 
