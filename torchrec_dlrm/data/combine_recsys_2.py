@@ -303,27 +303,32 @@ def ce_cat_feat_with_all_date(
 
 
 def ce_cat_feat(df_train, df_test=None):    
-    group_columns = [
-        column for column in df_train.columns
-        if column.startswith('gp_cnt')
-    ]
-    all_cat_columns = [f'f_{i}' for i in range(2, 42)] + \
-        group_columns
+    # group_columns = [
+    #     column for column in df_train.columns
+    #     if column.startswith('gp_cnt')
+    # ]
+    # all_cat_columns = [f'f_{i}' for i in range(2, 42)] + \
+    #     group_columns
+    # ce_columns = get_cat_columns_with_cardinality(
+    #         df_train, all_cat_columns, range(3, 1000)
+    #     )
     
     # method 1: time window CE feat
-    ce_columns = get_cat_columns_with_cardinality(
-        df_train, all_cat_columns, range(3, 1000)
-    )
+    if IS_WINDOW_CE:
+        cat_columns = [2, 4, 6, 15]
+        ce_columns = [f'f_{i}' for i in cat_columns]
+        time_window_list = [7]
+        total_date = range(45, TEST_DATE+1)
 
-    time_window_list = [1, 2, 3]
-    total_date = sorted(list(df_train['f_1'].unique()) + [TEST_DATE])
-
-    for current_date in total_date:
-        df_train, df_test = ce_cat_feat_with_time_window(
-            ce_columns, 
-            current_date, time_window_list,
-            df_train, df_test
-        )
+        for current_date in total_date:
+            df_train, df_test = ce_cat_feat_with_time_window(
+                ce_columns, 
+                current_date, time_window_list,
+                df_train, df_test,
+                normalize=False,
+                inclusive=False, cal_avg=True,
+                verbose=True
+            )
 
     # method 2: raw CE feat
     ce_columns = [f'f_{i}' for i in [2, 4, 6, 15]]
@@ -577,6 +582,7 @@ def main(argv: List[str]) -> None:
 
 if __name__ == "__main__":
     IS_CE = False
+    IS_WINDOW_CE = False
     IS_ADD_TIME_FEAT = True
     TEST_DATE = 60
 
