@@ -132,6 +132,12 @@ class CustomizeCompileModel():
     def _get_loss_func_single(self, loss):
         if loss == "binary_crossentropy":
             loss_func = F.binary_cross_entropy
+        elif loss == 'weight_bce':
+            loss_func_temp = F.binary_cross_entropy
+            loss_func = lambda *args, **kwargs: loss_func_temp(
+                *args, weight=torch.where(args[1] > 0, 1.0, 1.5),
+                reduction=kwargs['reduction']
+            )
         elif loss == "mse":
             loss_func = F.mse_loss
         elif loss == "mae":
@@ -194,7 +200,7 @@ if __name__ == "__main__":
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
     # exp_mode = 'multi,single'
-    exp_mode = 'day67'
+    exp_mode = 'day60'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -205,16 +211,18 @@ if __name__ == "__main__":
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
         model_name = 'MMoE2' # MMoE, MMoE2, PLE
-        loss = ["binary_crossentropy", "binary_crossentropy"]
+        # loss = ["binary_crossentropy", "binary_crossentropy"]
+        loss = ["weight_bce", "weight_bce"]
         loss_weight_list = [1, 1]
         # loss_weight_list = [0, 1]
         
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw12'
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw16'
+        print(f'input data path: {input_data_dir}')
         save_dir = f'sub/{model_name}'
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
             f'test-{test_day}.csv'
-        emb_save_dir = f'{save_dir}/DNN_cat_emb/test-{test_day}-short'
-        # emb_save_dir = None
+        # emb_save_dir = f'{save_dir}/DNN_cat_emb/test-{test_day}-short'
+        emb_save_dir = None
         shuffle = True
 
         tower_dnn_hidden_units=(64,)
@@ -222,13 +230,13 @@ if __name__ == "__main__":
         num_experts = 3
         embedding_dim = "auto"
 
-        batch_size = 256
-        epochs = 1
+        batch_size = 64
+        epochs = 20
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
-        learning_rate = 1e-2
-        l2_reg_linear = 0.0
-        l2_reg_embedding = 0.0
+        learning_rate = 0.01
+        l2_reg_linear = 0.01
+        l2_reg_embedding = 0.01
         if save_dir:
             os.system(f'mkdir -p {save_dir}')
         if emb_save_dir:
@@ -265,7 +273,7 @@ if __name__ == "__main__":
                                                                 for feat in dense_features]
         cat_feature_columns = [
             SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
-            for feat in sparse_features
+            for feat in ['cat_0', 'cat_2', 'cat_4', 'cat_13']
         ]
         del data
 
@@ -285,6 +293,7 @@ if __name__ == "__main__":
             print('cuda ready...')
             device = 'cuda:0'
 
+        # TODO: find class by name
         if model_name == 'MMoE':
             model = MMOE(
                 dnn_feature_columns, 
@@ -328,7 +337,7 @@ if __name__ == "__main__":
         else:
             raise NotImplementedError
 
-        model.compile(optimizer, loss=loss)
+        model.compile(optimizer, loss=["binary_crossentropy", "binary_crossentropy"])
         CustomizeCompileModel(model, optimizer, learning_rate, loss, loss_weight_list)
         
         evaluate_callback = EvaluatingCallback(
