@@ -340,25 +340,12 @@ def ce_cat_feat(df_train, df_test=None):
 
 
 def te_cat_feat(df_train, df_test=None):
+
+    # label_list = ['is_clicked', 'is_installed']
+    label_list = [f'f_{i}' for i in range(33, 42)]
     
-    for label in ['is_clicked', 'is_installed']:
-
-        te_columns = [f'f_{i}' for i in range(2, 42)]
-        if label == 'is_clicked':
-            group_prefix = 'gp_click'
-        else:
-            group_prefix = 'gp_install'   
-        te_columns += [
-            column for column in df_train.columns
-            if column.startswith(group_prefix)
-        ]
-
-        te_columns = get_cat_columns_with_cardinality(
-            df_train, te_columns, range(3, 1000)
-        )
-
-        if not te_columns:
-            return df_train, df_test
+    for label in label_list:
+        te_columns = [f'f_{i}' for i in [2, 4, 6, 15]]
     
         te_after_columns = list(map(lambda x: f'te_{label}_{x}', te_columns))
         
