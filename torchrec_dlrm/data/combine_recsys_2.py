@@ -422,8 +422,7 @@ def scale_dense_feat(df_train, df_test=None, scaler='min-max'):
 
     dense_columns = [f'f_{i}' for i in range(42, 80)] + \
         [column for column in df_train.columns if column.startswith('ce_')] + \
-        [column for column in df_train.columns if column.startswith('te_')] + \
-        [column for column in df_train.columns if column.startswith('time_')]
+        [column for column in df_train.columns if column.startswith('te_')]
 
     df_train, df_test = fit_transform(scaler, IS_COMBINE, dense_columns, 
                   dense_columns, df_train, df_test)
@@ -585,4 +584,4 @@ if __name__ == "__main__":
 
 # python data/combine_recsys_2.py \
 #    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw16'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw17'
