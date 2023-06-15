@@ -576,16 +576,17 @@ def main(argv: List[str]) -> None:
     
 
 if __name__ == "__main__":
-    IS_CATEGORIFY = True
-    IS_COMBINE = False
-    IS_ADD_GROUP_ID = False
     IS_CE = False
+    IS_ADD_TIME_FEAT = True
+    TEST_DATE = 60
+
+    IS_COMBINE = False
+    IS_CATEGORIFY = True
+    IS_ADD_GROUP_ID = False
     IS_TE = False
-    IS_ADD_TIME_FEAT = False
     IS_SCALE_DENSE = True
     SCALE_TYPE = 'quantile'
     IS_DISCRE = False
-    TEST_DATE = 60
     main(sys.argv[1:])
 
 
