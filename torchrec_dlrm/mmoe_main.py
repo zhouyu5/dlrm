@@ -35,7 +35,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
         self.pred_save_path = pred_save_path
         self.emb_save_dir = emb_save_dir
 
-    def save_predict(self, test, test_model_input):
+    def save_predict(self, test, test_model_input, epoch):
         print(f'begin save predictions...')
         target = self.label_list
         i = target.index('is_installed')
@@ -45,7 +45,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
             'RowId': test['f_0'].values,
             'is_clicked': [0.0] * num_samples,
             'is_installed': pred_ans[:, i].round(decimals=5)
-        }).to_csv(self.pred_save_path, sep='\t', header=True, index=False)
+        }).to_csv(f'{self.pred_save_path}-ep{epoch}.csv', sep='\t', header=True, index=False)
 
     def evaluate_valid(self):
         def H(p):
@@ -69,7 +69,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
         if self.valid is not None:
             self.evaluate_valid()
         if self.pred_save_path:
-            self.save_predict(self.test, self.test_model_input)
+            self.save_predict(self.test, self.test_model_input, epoch)
         print("########################################################")
 
     def export_embedding(self, row_id, model_input, emb_save_path):
@@ -200,7 +200,7 @@ if __name__ == "__main__":
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
     # exp_mode = 'multi,single'
-    exp_mode = 'day60'
+    exp_mode = 'day67'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -216,11 +216,11 @@ if __name__ == "__main__":
         loss_weight_list = [1, 1]
         # loss_weight_list = [0, 1]
         
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw16'
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw18'
         print(f'input data path: {input_data_dir}')
         save_dir = f'sub/{model_name}'
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
-            f'test-{test_day}.csv'
+            f'day-{test_day}'
         # emb_save_dir = f'{save_dir}/DNN_cat_emb/test-{test_day}-short'
         emb_save_dir = None
         shuffle = True

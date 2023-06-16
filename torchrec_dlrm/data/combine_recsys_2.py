@@ -570,7 +570,7 @@ if __name__ == "__main__":
     IS_CE = False
     IS_WINDOW_CE = False
     IS_ADD_TIME_FEAT = False
-    TEST_DATE = 60
+    TEST_DATE = 67
 
     IS_COMBINE = False
     IS_CATEGORIFY = True
@@ -584,4 +584,4 @@ if __name__ == "__main__":
 
 # python data/combine_recsys_2.py \
 #    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw17'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw18'
