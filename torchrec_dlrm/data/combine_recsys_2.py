@@ -486,6 +486,24 @@ def process_dense_feat(df_train, df_test=None):
     return df_train, df_test
     
     
+def add_new_label(df_train, df_test=None):
+    def f(df):
+        label_dict = {
+            '00': 0, '01': 1,
+            '10': 2, '11': 3
+        }
+        df = df.copy()
+        df['new_label'] = df['is_installed'].astype(str) + df['is_clicked'].astype(str)
+        df['new_label'] = df['new_label'].map(label_dict)
+        return df
+    
+    df_train = f(df_train)
+    if df_test is not None:
+        df_test = f(df_test)
+
+    return df_train, df_test
+
+
 def get_processed_df(df_train, df_test=None):
 
     # step1: process dense missing value
@@ -498,6 +516,10 @@ def get_processed_df(df_train, df_test=None):
     # step3: process numerical feat
     print('processing dense feature')
     df_train, df_test = process_dense_feat(df_train, df_test)
+
+    # step4: add new label
+    if IS_ADD_LABEL:
+        df_train, df_test = add_new_label(df_train, df_test)
     
     return df_train, df_test
 
@@ -571,6 +593,7 @@ if __name__ == "__main__":
     IS_WINDOW_CE = False
     IS_ADD_TIME_FEAT = False
     TEST_DATE = 67
+    IS_ADD_LABEL = False
 
     IS_COMBINE = False
     IS_CATEGORIFY = True
