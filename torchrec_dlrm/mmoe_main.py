@@ -233,8 +233,8 @@ def get_exp_days_list(exp='single'):
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(67) if day not in stop_day_list]]
         minus_day = 11
-        # train_days_list += [range(67-minus_day, 67)]
-        train_days_list += [range(45, 67)]
+        train_days_list += [range(67-minus_day, 67)]
+        # train_days_list += [range(45, 67)]
         val_days_list += [[66]]
         test_days_list += [[67]]
     if 'day60' in exp:
@@ -283,7 +283,7 @@ if __name__ == "__main__":
         pred_save_path = f'{pred_save_dir}/sub-{model_name}'
         model_save_dir = f'{save_dir}/model-{exp_mode}'
         model_save_path = f'{model_save_dir}/{model_name}'
-        model_load_path = f'sub/MMoE2/model-day60-all/MMoE2-ep3.pkl'
+        model_load_path = f'sub/MMoE2/model-{exp_mode}-all/MMoE2-ep3.pkl'
         # model_load_path = None
         # emb_save_dir = f'{save_dir}/DNN_cat_emb/day_{test_day}'
         emb_save_dir = None
@@ -295,7 +295,7 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 64
-        epochs = 4
+        epochs = 20
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 0.01
