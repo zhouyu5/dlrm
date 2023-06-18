@@ -17,7 +17,8 @@ class EvaluatingCallback(keras.callbacks.Callback):
     def __init__(self, label_list, feature_names,
                  cat_feature_columns,
                  train=None, valid=None, test=None, 
-                 pred_save_path=None, emb_save_dir=None, model_save_path=None
+                 pred_save_path=None, emb_save_dir=None, 
+                 model_save_path=None, model_load_path=None
                 ):
         self.label_list = label_list
         self.feature_names = feature_names
@@ -35,8 +36,11 @@ class EvaluatingCallback(keras.callbacks.Callback):
         self.pred_save_path = pred_save_path
         self.emb_save_dir = emb_save_dir
         self.model_save_path = model_save_path
+        self.model_load_path = model_load_path
 
     def save_predict(self, test, test_model_input, epoch):
+        if not self.pred_save_path:
+            return
         print(f'begin save predictions...')
         target = self.label_list
         i = target.index('is_installed')
@@ -51,6 +55,8 @@ class EvaluatingCallback(keras.callbacks.Callback):
     def evaluate_valid(self):
         def H(p):
             return -p*math.log(p) - (1-p)*math.log(1-p)
+        if self.valid is None:
+            return
         valid = self.valid
         val_model_input = self.val_model_input
         target = self.label_list
@@ -66,14 +72,35 @@ class EvaluatingCallback(keras.callbacks.Callback):
             print("%s valid LogLoss" % target_name, round(bce_loss, 4))
             print("%s valid AUC" % target_name, round(roc_auc_score(valid[target[i]].values, pred_ans[:, i]), 4))
         
+    def save_model(self, epoch):
+        if not self.model_save_path:
+            return
+        print(f'begin save model of epoch {epoch}...')
+        model_save_path = f'{self.model_save_path}-ep{epoch}.pkl'
+        state = {
+            'epoch': epoch,
+            'state_dict': self.model.state_dict(),
+            'optimizer': self.model.optim.state_dict()
+        }
+        torch.save(state, model_save_path)
+    
     def on_epoch_end(self, epoch, logs=None):
-        if self.valid is not None:
-            self.evaluate_valid()
-        if self.pred_save_path:
-            self.save_predict(self.test, self.test_model_input, epoch)
-        if self.model_save_path:
-            self.save_model(epoch)
+        self.evaluate_valid()
+        self.save_predict(self.test, self.test_model_input, epoch)
+        self.save_model(epoch)
         print("########################################################")
+    
+    def load_model(self, continue_train=False):
+        if not self.model_load_path:
+            return
+        print(f'load exist model from {self.model_load_path}...')
+        checkpoint = torch.load(self.model_load_path)
+        self.model.load_state_dict(checkpoint['state_dict'])
+        if continue_train:
+            self.model.optim.load_state_dict(checkpoint['optimizer'])
+    
+    def on_train_begin(self, logs=None):
+        self.load_model()
 
     def export_embedding(self, row_id, model_input, emb_save_path):
         print(f'begin export embeddings to {emb_save_path}...')
@@ -95,16 +122,6 @@ class EvaluatingCallback(keras.callbacks.Callback):
 
         df[emb_columns] = record_emb_array.round(decimals=5)
         df.to_csv(emb_save_path, sep='\t', header=True, index=False)
-
-    def save_model(self, epoch):
-        print(f'begin save model of epoch {epoch}...')
-        model_save_path = f'{self.model_save_path}-ep{epoch}.pkl'
-        state = {
-            'epoch': epoch,
-            'state_dict': self.model.state_dict(),
-            'optimizer': self.model.optim.state_dict()
-        }
-        torch.save(state, model_save_path)
 
     def on_train_end(self, logs=None):
         if self.emb_save_dir:
@@ -213,8 +230,8 @@ def get_exp_days_list(exp='single'):
     if 'day60' in exp:
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
-        # train_days_list += [range(51, 60)]
-        train_days_list += [range(45, 60)]
+        train_days_list += [range(51, 60)]
+        # train_days_list += [range(45, 60)]
         val_days_list += [[60]]
         test_days_list += [[60]]
     if 'last_week' in exp:
@@ -240,6 +257,7 @@ if __name__ == "__main__":
         test_day = TEST_DAYS[-1]
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
+        ########################################### 0. set params ###########################################
         model_name = 'MMoE2' # MMoE, MMoE2, PLE
         # loss = ["binary_crossentropy", "binary_crossentropy"]
         loss = ["weight_bce", "weight_bce"]
@@ -255,9 +273,10 @@ if __name__ == "__main__":
         pred_save_path = f'{pred_save_dir}/sub-{model_name}'
         model_save_dir = f'{save_dir}/model-{exp_mode}'
         model_save_path = f'{model_save_dir}/{model_name}'
+        model_load_path = f'sub/MMoE2/model-day60-all/MMoE2-ep3.pkl'
         # emb_save_dir = f'{save_dir}/DNN_cat_emb/day_{test_day}'
         emb_save_dir = None
-        shuffle = False
+        shuffle = True
 
         tower_dnn_hidden_units=(64,)
         # tower_dnn_hidden_units=(64, 32)
@@ -299,10 +318,7 @@ if __name__ == "__main__":
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
         target = target[:-2]
 
-        ### filter data
-        train = train.loc[train['f_1'].isin(TRAIN_DAYS)]
-
-        # 2.count #unique features for each sparse field,and record dense feature field name
+        ########################################### 2. prepare emb dim and field name ###########################################
         data = pd.concat((train, test), ignore_index=True)
         fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
                                 for feat in sparse_features] + [DenseFeat(feat, 1, )
@@ -319,10 +335,12 @@ if __name__ == "__main__":
         feature_names = get_feature_names(
             linear_feature_columns + dnn_feature_columns)
 
-        # 3.generate input data for model
+        ########################################### 3. generate train input data for model ###########################################
+        ### filter data
+        train = train.loc[train['f_1'].isin(TRAIN_DAYS)]
         train_model_input = {name: train[name] for name in feature_names}
         
-        # 4.Define Model,train,predict and evaluate
+        ########################################### 4. Define Model,train,predict and evaluate ###########################################
         device = 'cpu'
         use_cuda = True
         if use_cuda and torch.cuda.is_available():
@@ -384,7 +402,7 @@ if __name__ == "__main__":
             cat_feature_columns,
             train, valid, test, 
             pred_save_path, emb_save_dir,
-            model_save_path,
+            model_save_path, model_load_path,
         )
 
         history = model.fit(
