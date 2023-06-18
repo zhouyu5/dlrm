@@ -107,22 +107,39 @@ class EvaluatingCallback(keras.callbacks.Callback):
 
 
 class CustomizeCompileModel():
-    def __init__(self, model, optimizer, lr, loss, loss_weight_list):
+    def __init__(self, model, optimizer, lr, loss, loss_weight_list, weight_decay=0):
         self.model = model
-        self.model.optim = self._get_optim(optimizer, lr)
+        self.model.optim = self._get_optim(optimizer, lr, weight_decay)
         self.model.loss_func = self._get_loss_func(loss, loss_weight_list)
+
+    def fix_weight_decay(self):
+        decay = []
+        no_decay = []
+        for name, param in self.model.named_parameters():
+            if not param.requires_grad:
+                continue
+            if any(map(lambda x: x in name, ['bias', 'batch_norm', 'activation'])):
+                no_decay.append(param)
+            else:
+                decay.append(param)
+        params = [{'params': decay}, {'params': no_decay, 'weight_decay': 0}]
+        return params
     
-    def _get_optim(self, optimizer, lr):
-        print(f'You are choosing optimizer {optimizer}, initial lr: {lr}')
+    def _get_optim(self, optimizer, lr, weight_decay):
+        print(f'You are choosing optimizer {optimizer}, initial lr: {lr}, weight decay: {weight_decay}')
+        if weight_decay > 0:
+            params = self.fix_weight_decay()
+        else:
+            params = self.model.parameters()
         if isinstance(optimizer, str):
             if optimizer == "sgd":
-                optim = torch.optim.SGD(self.model.parameters(), lr=lr)
+                optim = torch.optim.SGD(params, lr=lr, weight_decay=weight_decay)
             elif optimizer == "adam":
-                optim = torch.optim.Adam(self.model.parameters(), lr=lr)  # 0.001
+                optim = torch.optim.Adam(params, lr=lr, weight_decay=weight_decay)  # 0.001
             elif optimizer == "adagrad":
-                optim = torch.optim.Adagrad(self.model.parameters(), lr=lr)  # 0.01
+                optim = torch.optim.Adagrad(params, lr=lr, weight_decay=weight_decay)  # 0.01
             elif optimizer == "rmsprop":
-                optim = torch.optim.RMSprop(self.model.parameters(), lr=lr)
+                optim = torch.optim.RMSprop(params, lr=lr, weight_decay=weight_decay)
             else:
                 raise NotImplementedError
         else:
@@ -183,8 +200,8 @@ def get_exp_days_list(exp='single'):
     if 'day60' in exp:
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
-        train_days_list += [range(51, 60)]
-        # train_days_list += [range(45, 60)]
+        # train_days_list += [range(51, 60)]
+        train_days_list += [range(45, 60)]
         val_days_list += [[60]]
         test_days_list += [[60]]
     if 'last_week' in exp:
@@ -200,7 +217,7 @@ if __name__ == "__main__":
     ########################################### 0. prepare params ###########################################
     # single, multi, last_week
     # exp_mode = 'multi,single'
-    exp_mode = 'day67'
+    exp_mode = 'day60'
     train_days_list, val_days_list, test_days_list = get_exp_days_list(
         exp=exp_mode
     )
@@ -215,15 +232,17 @@ if __name__ == "__main__":
         loss = ["weight_bce", "weight_bce"]
         loss_weight_list = [1, 1]
         # loss_weight_list = [0, 1]
+        # weight_decay = 1e-4
+        weight_decay = 0
         
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw18'
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw17'
         print(f'input data path: {input_data_dir}')
         save_dir = f'sub/{model_name}'
         pred_save_path = f'{save_dir}/sub_{model_name}_'\
             f'day-{test_day}'
-        # emb_save_dir = f'{save_dir}/DNN_cat_emb/test-{test_day}-short'
+        # emb_save_dir = f'{save_dir}/DNN_cat_emb/day_{test_day}'
         emb_save_dir = None
-        shuffle = True
+        shuffle = False
 
         tower_dnn_hidden_units=(64,)
         # tower_dnn_hidden_units=(64, 32)
@@ -338,7 +357,10 @@ if __name__ == "__main__":
             raise NotImplementedError
 
         model.compile(optimizer, loss=["binary_crossentropy", "binary_crossentropy"])
-        CustomizeCompileModel(model, optimizer, learning_rate, loss, loss_weight_list)
+        CustomizeCompileModel(
+            model, optimizer, learning_rate, loss, loss_weight_list, 
+            weight_decay=weight_decay
+        )
         
         evaluate_callback = EvaluatingCallback(
             target, feature_names,
