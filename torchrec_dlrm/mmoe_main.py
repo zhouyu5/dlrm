@@ -17,7 +17,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
     def __init__(self, label_list, feature_names,
                  cat_feature_columns,
                  train=None, valid=None, test=None, 
-                 pred_save_path=None, emb_save_dir=None,
+                 pred_save_path=None, emb_save_dir=None, model_save_path=None
                 ):
         self.label_list = label_list
         self.feature_names = feature_names
@@ -34,6 +34,7 @@ class EvaluatingCallback(keras.callbacks.Callback):
             self.test_model_input = {name: test[name] for name in feature_names}
         self.pred_save_path = pred_save_path
         self.emb_save_dir = emb_save_dir
+        self.model_save_path = model_save_path
 
     def save_predict(self, test, test_model_input, epoch):
         print(f'begin save predictions...')
@@ -70,6 +71,8 @@ class EvaluatingCallback(keras.callbacks.Callback):
             self.evaluate_valid()
         if self.pred_save_path:
             self.save_predict(self.test, self.test_model_input, epoch)
+        if self.model_save_path:
+            self.save_model(epoch)
         print("########################################################")
 
     def export_embedding(self, row_id, model_input, emb_save_path):
@@ -92,6 +95,16 @@ class EvaluatingCallback(keras.callbacks.Callback):
 
         df[emb_columns] = record_emb_array.round(decimals=5)
         df.to_csv(emb_save_path, sep='\t', header=True, index=False)
+
+    def save_model(self, epoch):
+        print(f'begin save model of epoch {epoch}...')
+        model_save_path = f'{self.model_save_path}-ep{epoch}.pkl'
+        state = {
+            'epoch': epoch,
+            'state_dict': self.model.state_dict(),
+            'optimizer': self.model.optim.state_dict()
+        }
+        torch.save(state, model_save_path)
 
     def on_train_end(self, logs=None):
         if self.emb_save_dir:
@@ -238,8 +251,10 @@ if __name__ == "__main__":
         input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw17'
         print(f'input data path: {input_data_dir}')
         save_dir = f'sub/{model_name}'
-        pred_save_path = f'{save_dir}/sub_{model_name}_'\
-            f'day-{test_day}'
+        pred_save_dir = f'{save_dir}/pred-{exp_mode}'
+        pred_save_path = f'{pred_save_dir}/sub-{model_name}'
+        model_save_dir = f'{save_dir}/model-{exp_mode}'
+        model_save_path = f'{model_save_dir}/{model_name}'
         # emb_save_dir = f'{save_dir}/DNN_cat_emb/day_{test_day}'
         emb_save_dir = None
         shuffle = False
@@ -250,14 +265,16 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 64
-        epochs = 20
+        epochs = 4
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 0.01
         l2_reg_linear = 0.01
         l2_reg_embedding = 0.01
-        if save_dir:
-            os.system(f'mkdir -p {save_dir}')
+        if pred_save_dir:
+            os.system(f'mkdir -p {pred_save_dir}')
+        if model_save_dir:
+            os.system(f'mkdir -p {model_save_dir}')
         if emb_save_dir:
             os.system(f'mkdir -p {emb_save_dir}')
         
@@ -367,6 +384,7 @@ if __name__ == "__main__":
             cat_feature_columns,
             train, valid, test, 
             pred_save_path, emb_save_dir,
+            model_save_path,
         )
 
         history = model.fit(
