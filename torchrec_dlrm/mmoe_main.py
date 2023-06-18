@@ -13,7 +13,7 @@ from deepctr_torch.models import *
 from models import MMOE2, MMOE3
 
 
-class EvaluatingCallback(keras.callbacks.Callback):
+class RunningCallback(keras.callbacks.Callback):
     def __init__(self, label_list, feature_names,
                  cat_feature_columns,
                  train=None, valid=None, test=None, 
@@ -88,19 +88,29 @@ class EvaluatingCallback(keras.callbacks.Callback):
         self.evaluate_valid()
         self.save_predict(self.test, self.test_model_input, epoch)
         self.save_model(epoch)
+        self.scheduler.step()
         print("########################################################")
     
     def load_model(self, continue_train=False):
+        last_epoch = -1
         if not self.model_load_path:
-            return
+            return last_epoch
         print(f'load exist model from {self.model_load_path}...')
         checkpoint = torch.load(self.model_load_path)
         self.model.load_state_dict(checkpoint['state_dict'])
         if continue_train:
             self.model.optim.load_state_dict(checkpoint['optimizer'])
+            last_epoch = checkpoint['epoch']
+        return last_epoch
     
+    def set_lr_scheduler(self, last_epoch):
+        self.scheduler = torch.optim.lr_scheduler.StepLR(
+            self.model.optim, step_size=5, gamma=0.1, last_epoch=last_epoch
+        )
+
     def on_train_begin(self, logs=None):
-        self.load_model()
+        last_epoch = self.load_model()
+        self.set_lr_scheduler(last_epoch)
 
     def export_embedding(self, row_id, model_input, emb_save_path):
         print(f'begin export embeddings to {emb_save_path}...')
@@ -223,8 +233,8 @@ def get_exp_days_list(exp='single'):
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(67) if day not in stop_day_list]]
         minus_day = 11
-        train_days_list += [range(67-minus_day, 67)]
-        # train_days_list += [range(45, 67)]
+        # train_days_list += [range(67-minus_day, 67)]
+        train_days_list += [range(45, 67)]
         val_days_list += [[66]]
         test_days_list += [[67]]
     if 'day60' in exp:
@@ -274,6 +284,7 @@ if __name__ == "__main__":
         model_save_dir = f'{save_dir}/model-{exp_mode}'
         model_save_path = f'{model_save_dir}/{model_name}'
         model_load_path = f'sub/MMoE2/model-day60-all/MMoE2-ep3.pkl'
+        # model_load_path = None
         # emb_save_dir = f'{save_dir}/DNN_cat_emb/day_{test_day}'
         emb_save_dir = None
         shuffle = True
@@ -325,7 +336,7 @@ if __name__ == "__main__":
                                                                 for feat in dense_features]
         cat_feature_columns = [
             SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
-            for feat in ['cat_0', 'cat_2', 'cat_4', 'cat_13']
+            for feat in ['cat_0', 'cat_2', 'cat_4', 'cat_10', 'cat_12', 'cat_15']
         ]
         del data
 
@@ -397,7 +408,7 @@ if __name__ == "__main__":
             weight_decay=weight_decay
         )
         
-        evaluate_callback = EvaluatingCallback(
+        evaluate_callback = RunningCallback(
             target, feature_names,
             cat_feature_columns,
             train, valid, test, 
