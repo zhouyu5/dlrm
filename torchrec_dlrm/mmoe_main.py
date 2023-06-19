@@ -189,6 +189,8 @@ class CustomizeCompileModel():
     def _get_loss_func_single(self, loss):
         if loss == "binary_crossentropy":
             loss_func = F.binary_cross_entropy
+        elif loss == "crossentropy":
+            loss_func = F.cross_entropy
         elif loss == 'weight_bce':
             loss_func_temp = F.binary_cross_entropy
             loss_func = lambda *args, **kwargs: loss_func_temp(
