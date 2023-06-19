@@ -235,8 +235,8 @@ def get_exp_days_list(exp='single'):
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(67) if day not in stop_day_list]]
         minus_day = 11
-        train_days_list += [range(67-minus_day, 67)]
-        # train_days_list += [range(45, 67)]
+        # train_days_list += [range(67-minus_day, 67)]
+        train_days_list += [range(45, 67)]
         val_days_list += [[66]]
         test_days_list += [[67]]
     if 'day60' in exp:
@@ -275,6 +275,7 @@ if __name__ == "__main__":
         loss = ["weight_bce", "weight_bce"]
         num_tasks = len(loss)
         loss_weight_list = [1] * num_tasks
+        task_types = ['binary'] * num_tasks
         # weight_decay = 1e-4
         weight_decay = 0
         
@@ -285,8 +286,8 @@ if __name__ == "__main__":
         pred_save_path = f'{pred_save_dir}/sub-{model_name}'
         model_save_dir = f'{save_dir}/model-{exp_mode}'
         model_save_path = f'{model_save_dir}/{model_name}'
-        # model_load_path = f'sub/MMoE2/model-{exp_mode}-all/MMoE2-ep4.pkl'
-        # model_load_path = f'sub/MMoE2/model-{exp_mode}/MMoE2-ep7.pkl'
+        # model_load_path = f'sub/MMoE2/model-{exp_mode}-cat-feat/MMoE2-ep0.pkl'
+        # model_load_path = f'sub/MMoE2/model-{exp_mode}/MMoE2-ep2.pkl'
         model_load_path = None
         # emb_save_dir = f'{save_dir}/DNN_cat_emb-{exp_mode}'
         emb_save_dir = None
@@ -298,7 +299,7 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 64
-        epochs = 5
+        epochs = 10
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 0.01
@@ -335,9 +336,10 @@ if __name__ == "__main__":
         ########################################### 2. prepare emb dim and field name ###########################################
         # data = pd.concat((train, test), ignore_index=True)
         data = train.copy()
-        fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
-                                for feat in sparse_features] + [DenseFeat(feat, 1, )
-                                                                for feat in dense_features]
+        fixlen_feature_columns = [
+            SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim) for feat in sparse_features
+        ]
+        fixlen_feature_columns += [DenseFeat(feat, 1, ) for feat in dense_features]
         cat_feature_columns = [
             SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
             for feat in ['cat_0', 'cat_2', 'cat_4', 'cat_10', 'cat_12', 'cat_15']
@@ -368,7 +370,7 @@ if __name__ == "__main__":
                 dnn_feature_columns, 
                 num_experts=num_experts,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
-                task_types=['binary'] * num_tasks,
+                task_types=task_types,
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
@@ -378,7 +380,7 @@ if __name__ == "__main__":
                 dnn_feature_columns, 
                 num_experts=num_experts,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
-                task_types=['binary'] * num_tasks,
+                task_types=task_types,
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
@@ -388,7 +390,7 @@ if __name__ == "__main__":
                 dnn_feature_columns, 
                 num_experts=num_experts,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
-                task_types=['binary'] * num_tasks,
+                task_types=task_types,
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
@@ -398,7 +400,7 @@ if __name__ == "__main__":
                 dnn_feature_columns, 
                 num_levels=3,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
-                task_types=['binary'] * num_tasks,
+                task_types=task_types,
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
