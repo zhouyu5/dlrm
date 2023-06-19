@@ -173,7 +173,7 @@ def categorify_cat_feat(df_train, df_test=None):
                      # encoded_missing_value=-1,
                      handle_unknown='use_encoded_value',
                      unknown_value=-1,
-                     min_frequency=1,
+                    #  min_frequency=1,
                  )
             ),
         ])
@@ -414,7 +414,7 @@ def scale_dense_feat(df_train, df_test=None, scaler='min-max'):
     elif scaler == 'quantile':
         scaler = preprocessing.QuantileTransformer(
             output_distribution="normal",
-            subsample=100000,
+            subsample=1000000,
             random_state=2023,
         )
     else:
@@ -538,6 +538,7 @@ def save_output_df(df_train, df_test, test_date, output_dir):
     label_cols = [
         'is_installed',
         'is_clicked',
+        'new_label',
         'f_0',
         'f_1',
     ]
@@ -593,7 +594,7 @@ if __name__ == "__main__":
     IS_WINDOW_CE = False
     IS_ADD_TIME_FEAT = False
     TEST_DATE = 67
-    IS_ADD_LABEL = False
+    IS_ADD_LABEL = True
 
     IS_COMBINE = False
     IS_CATEGORIFY = True
@@ -607,4 +608,4 @@ if __name__ == "__main__":
 
 # python data/combine_recsys_2.py \
 #    --input_dir '/home/vmagent/app/data/sharechat_recsys2023_data' \
-#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw18'
+#    --output_dir '/home/vmagent/app/data/recsys2023_process/raw20'
