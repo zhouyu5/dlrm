@@ -105,7 +105,7 @@ class RunningCallback(keras.callbacks.Callback):
     
     def set_lr_scheduler(self, last_epoch):
         self.scheduler = torch.optim.lr_scheduler.StepLR(
-            self.model.optim, step_size=5, gamma=0.1, last_epoch=last_epoch
+            self.model.optim, step_size=10, gamma=0.1, last_epoch=last_epoch
         )
 
     def on_train_begin(self, logs=None):
@@ -240,8 +240,8 @@ def get_exp_days_list(exp='single'):
     if 'day60' in exp:
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
-        train_days_list += [range(51, 60)]
-        # train_days_list += [range(45, 60)]
+        # train_days_list += [range(51, 60)]
+        train_days_list += [range(45, 60)]
         val_days_list += [[60]]
         test_days_list += [[60]]
     if 'last_week' in exp:
@@ -276,18 +276,18 @@ if __name__ == "__main__":
         # weight_decay = 1e-4
         weight_decay = 0
         
-        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw17'
+        input_data_dir = '/home/vmagent/app/data/recsys2023_process/raw19'
         print(f'input data path: {input_data_dir}')
         save_dir = f'sub/{model_name}'
         pred_save_dir = f'{save_dir}/pred-{exp_mode}'
         pred_save_path = f'{pred_save_dir}/sub-{model_name}'
         model_save_dir = f'{save_dir}/model-{exp_mode}'
         model_save_path = f'{model_save_dir}/{model_name}'
-        model_load_path = f'sub/MMoE2/model-{exp_mode}-all/MMoE2-ep3.pkl'
-        # model_load_path = None
-        # emb_save_dir = f'{save_dir}/DNN_cat_emb/day_{test_day}'
+        # model_load_path = f'sub/MMoE2/model-{exp_mode}-all/MMoE2-ep4.pkl'
+        model_load_path = None
+        # emb_save_dir = f'{save_dir}/DNN_cat_emb-{exp_mode}'
         emb_save_dir = None
-        shuffle = True
+        shuffle = False
 
         tower_dnn_hidden_units=(64,)
         # tower_dnn_hidden_units=(64, 32)
@@ -295,7 +295,7 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 64
-        epochs = 20
+        epochs = 5
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 0.01
