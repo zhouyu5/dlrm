@@ -335,6 +335,7 @@ if __name__ == "__main__":
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
         # target = target[:-3]
         target = ['is_clicked', 'new_label']
+        evaluate_label_list = ['is_clicked']
 
         ########################################### 2. prepare emb dim and field name ###########################################
         # data = pd.concat((train, test), ignore_index=True)
@@ -418,7 +419,7 @@ if __name__ == "__main__":
         )
         
         evaluate_callback = RunningCallback(
-            target, feature_names,
+            evaluate_label_list, feature_names,
             cat_feature_columns,
             train, valid, test, 
             pred_save_path, emb_save_dir,
