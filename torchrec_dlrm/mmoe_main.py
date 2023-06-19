@@ -285,7 +285,8 @@ if __name__ == "__main__":
         print(f'input data path: {input_data_dir}')
         save_dir = f'sub/{model_name}'
         pred_save_dir = f'{save_dir}/pred-{exp_mode}'
-        pred_save_path = f'{pred_save_dir}/sub-{model_name}'
+        # pred_save_path = f'{pred_save_dir}/sub-{model_name}'
+        pred_save_path = None
         model_save_dir = f'{save_dir}/model-{exp_mode}'
         model_save_path = f'{model_save_dir}/{model_name}'
         # model_load_path = f'sub/MMoE2/model-{exp_mode}-cat-feat/MMoE2-ep0.pkl'
