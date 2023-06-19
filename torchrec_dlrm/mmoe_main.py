@@ -242,8 +242,8 @@ def get_exp_days_list(exp='single'):
     if 'day60' in exp:
         # stop_day_list = [6, 2, 14, 0, 1, 18, 5]
         # train_days_list += [[day for day in range(22) if day not in stop_day_list]]
-        # train_days_list += [range(51, 60)]
-        train_days_list += [range(45, 60)]
+        train_days_list += [range(51, 60)]
+        # train_days_list += [range(45, 60)]
         val_days_list += [[60]]
         test_days_list += [[60]]
     if 'last_week' in exp:
@@ -270,12 +270,14 @@ if __name__ == "__main__":
         print(f'train_day: {TRAIN_DAYS}, val_days: {VAL_DAYS}')
 
         ########################################### 0. set params ###########################################
-        model_name = 'MMoE2' # MMoE, MMoE2, PLE
+        model_name = 'MMoE3' # MMoE, MMoE2, PLE
         # loss = ["binary_crossentropy", "binary_crossentropy"]
-        loss = ["weight_bce", "weight_bce"]
+        # loss = ["weight_bce", "weight_bce"]
+        loss = ["weight_bce", "crossentropy"]
         num_tasks = len(loss)
         loss_weight_list = [1] * num_tasks
-        task_types = ['binary'] * num_tasks
+        # task_types = ['binary'] * num_tasks
+        task_types = ['binary', 'multiclass']
         # weight_decay = 1e-4
         weight_decay = 0
         
@@ -291,7 +293,7 @@ if __name__ == "__main__":
         model_load_path = None
         # emb_save_dir = f'{save_dir}/DNN_cat_emb-{exp_mode}'
         emb_save_dir = None
-        shuffle = False
+        shuffle = True
 
         tower_dnn_hidden_units=(64,)
         # tower_dnn_hidden_units=(64, 32)
@@ -299,7 +301,7 @@ if __name__ == "__main__":
         embedding_dim = "auto"
 
         batch_size = 64
-        epochs = 10
+        epochs = 20
         # adagrad, adam, rmsprop
         optimizer = "adagrad"
         learning_rate = 0.01
@@ -331,7 +333,8 @@ if __name__ == "__main__":
         else:
             valid = None
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
-        target = target[:-3]
+        # target = target[:-3]
+        target = ['is_clicked', 'new_label']
 
         ########################################### 2. prepare emb dim and field name ###########################################
         # data = pd.concat((train, test), ignore_index=True)
