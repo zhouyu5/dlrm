@@ -271,8 +271,8 @@ if __name__ == "__main__":
         model_name = 'MMoE2' # MMoE, MMoE2, PLE
         # loss = ["binary_crossentropy", "binary_crossentropy"]
         loss = ["weight_bce", "weight_bce"]
-        loss_weight_list = [1, 1]
-        # loss_weight_list = [0, 1]
+        num_tasks = len(loss)
+        loss_weight_list = [1] * num_tasks
         # weight_decay = 1e-4
         weight_decay = 0
         
@@ -292,7 +292,7 @@ if __name__ == "__main__":
 
         tower_dnn_hidden_units=(64,)
         # tower_dnn_hidden_units=(64, 32)
-        num_experts = 3
+        num_experts = num_tasks + 1
         embedding_dim = "auto"
 
         batch_size = 64
@@ -366,7 +366,7 @@ if __name__ == "__main__":
                 dnn_feature_columns, 
                 num_experts=num_experts,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
-                task_types=['binary', 'binary'],
+                task_types=['binary'] * num_tasks,
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
@@ -376,7 +376,7 @@ if __name__ == "__main__":
                 dnn_feature_columns, 
                 num_experts=num_experts,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
-                task_types=['binary', 'binary'],
+                task_types=['binary'] * num_tasks,
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
@@ -386,7 +386,7 @@ if __name__ == "__main__":
                 dnn_feature_columns, 
                 num_experts=num_experts,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
-                task_types=['binary', 'binary'],
+                task_types=['binary'] * num_tasks,
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
@@ -396,7 +396,7 @@ if __name__ == "__main__":
                 dnn_feature_columns, 
                 num_levels=3,
                 tower_dnn_hidden_units=tower_dnn_hidden_units,
-                task_types=['binary', 'binary'],
+                task_types=['binary'] * num_tasks,
                 l2_reg_linear=l2_reg_linear,
                 l2_reg_embedding=l2_reg_embedding,
                 task_names=target, device=device
@@ -404,7 +404,7 @@ if __name__ == "__main__":
         else:
             raise NotImplementedError
 
-        model.compile(optimizer, loss=["binary_crossentropy", "binary_crossentropy"])
+        model.compile(optimizer, loss=["binary_crossentropy"] * num_tasks)
         CustomizeCompileModel(
             model, optimizer, learning_rate, loss, loss_weight_list, 
             weight_decay=weight_decay
