@@ -284,6 +284,7 @@ if __name__ == "__main__":
         model_save_dir = f'{save_dir}/model-{exp_mode}'
         model_save_path = f'{model_save_dir}/{model_name}'
         # model_load_path = f'sub/MMoE2/model-{exp_mode}-all/MMoE2-ep4.pkl'
+        # model_load_path = f'sub/MMoE2/model-{exp_mode}/MMoE2-ep7.pkl'
         model_load_path = None
         # emb_save_dir = f'{save_dir}/DNN_cat_emb-{exp_mode}'
         emb_save_dir = None
