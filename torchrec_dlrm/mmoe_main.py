@@ -315,7 +315,7 @@ if __name__ == "__main__":
 
         sparse_features = [f"cat_{idx}" for idx in range(CAT_FEATURE_COUNT)]
         dense_features = [f"int_{idx}" for idx in range(INT_FEATURE_COUNT)]
-        target = 'is_installed,is_clicked,f_0,f_1'.split(',')
+        target = 'is_installed,is_clicked,new_label,f_0,f_1'.split(',')
 
         train_data_path = [f'{input_data_dir}/train']
         val_data_path = [f'{input_data_dir}/valid']
@@ -327,10 +327,11 @@ if __name__ == "__main__":
         else:
             valid = None
         test = pd.concat((pd.read_csv(f, sep='\t', names=feat_colunms) for f in test_data_path), ignore_index=True)
-        target = target[:-2]
+        target = target[:-3]
 
         ########################################### 2. prepare emb dim and field name ###########################################
-        data = pd.concat((train, test), ignore_index=True)
+        # data = pd.concat((train, test), ignore_index=True)
+        data = train.copy()
         fixlen_feature_columns = [SparseFeat(feat, vocabulary_size=data[feat].max() + 1, embedding_dim=embedding_dim)
                                 for feat in sparse_features] + [DenseFeat(feat, 1, )
                                                                 for feat in dense_features]
