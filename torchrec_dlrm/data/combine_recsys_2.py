@@ -342,10 +342,13 @@ def ce_cat_feat(df_train, df_test=None):
 def te_cat_feat(df_train, df_test=None):
 
     # label_list = ['is_clicked', 'is_installed']
-    label_list = [f'f_{i}' for i in range(33, 42)]
+    # label_list = [f'f_{i}' for i in range(33, 42)]
+    label_list = ['new_label']
     
     for label in label_list:
-        te_columns = [f'f_{i}' for i in [2, 4, 6, 15]]
+        # subset = [2, 4, 6, 15] # subset6
+        subset = [2, 4, 6, 13, 15, 18] # subset9
+        te_columns = [f'f_{i}' for i in subset]
     
         te_after_columns = list(map(lambda x: f'te_{label}_{x}', te_columns))
         
@@ -506,6 +509,10 @@ def add_new_label(df_train, df_test=None):
 
 def get_processed_df(df_train, df_test=None):
 
+    # step0: add new label
+    if IS_ADD_LABEL:
+        df_train, df_test = add_new_label(df_train, df_test)
+
     # step1: process dense missing value
     df_train, df_test = missing_dense_feat(df_train, df_test)
     
@@ -517,10 +524,6 @@ def get_processed_df(df_train, df_test=None):
     print('processing dense feature')
     df_train, df_test = process_dense_feat(df_train, df_test)
 
-    # step4: add new label
-    if IS_ADD_LABEL:
-        df_train, df_test = add_new_label(df_train, df_test)
-    
     return df_train, df_test
 
 
