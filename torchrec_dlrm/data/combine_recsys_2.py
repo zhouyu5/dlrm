@@ -219,10 +219,10 @@ def onehot_cat_feat(df_train, df_test=None):
         df_train, basic_cat_columns, range(3, 10)
     )
 
-    onehot_enc = preprocessing.OneHotEncoder(handle_unknown='ignore')
+    onehot_enc = preprocessing.OneHotEncoder(handle_unknown='ignore', dtype=np.int32)
     onehot_enc.fit(df_train[onehot_before_columns])
     onehot_after_columns = onehot_enc.get_feature_names_out(onehot_before_columns)
-    onehot_after_columns = list(map(lambda x: f'onehot_{x}', onehot_after_columns))
+    onehot_after_columns = list(map(lambda x: f'oh_{x}', onehot_after_columns))
     # print(onehot_after_columns)
     
     df_train[onehot_after_columns] = onehot_enc\
