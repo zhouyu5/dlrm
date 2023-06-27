@@ -340,10 +340,8 @@ def ce_cat_feat(df_train, df_test=None):
 
 
 def te_cat_feat(df_train, df_test=None):
-    # TODO: support multi class target encoding
-    # label_list = [f'f_{i}' for i in range(33, 42)]
-    # label_list = ['new_label']
-    label_list = ['is_clicked', 'is_installed']
+    label_list = [f'f_{i}' for i in range(33, 42)]
+    label_list += ['is_clicked', 'is_installed']
     
     for label in label_list:
         # subset = [2, 4, 6, 15] # subset6
