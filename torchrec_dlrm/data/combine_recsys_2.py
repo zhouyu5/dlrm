@@ -364,19 +364,6 @@ def te_cat_feat(df_train, df_test=None):
     return df_train, df_test
 
 
-def drop_cat_columns(df_train, df_test=None):
-    drop_columns_prefix_tuple = ('gp_click', 'gp_install')
-    exclude_columns = [
-        column for column in df_train.columns
-        if column.startswith(drop_columns_prefix_tuple)
-    ]
-    
-    df_train = df_train.drop(exclude_columns, axis=1)
-    if df_test is not None:
-        df_test = df_test.drop(exclude_columns, axis=1)
-    return df_train, df_test
-    
-
 def missing_dense_feat(df_train, df_test=None):
     dense_columns = [f'f_{i}' for i in range(42, 80)]
     df_train = df_train.copy()
@@ -403,9 +390,7 @@ def process_cat_feat(df_train, df_test=None):
     
     if IS_CATEGORIFY:
         df_train, df_test = categorify_cat_feat(df_train, df_test)
-    
-    df_train, df_test = drop_cat_columns(df_train, df_test)
-        
+            
     return df_train, df_test
 
 
