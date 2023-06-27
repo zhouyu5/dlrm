@@ -538,10 +538,18 @@ def save_output_df(df_train, df_test, test_date, output_dir):
         valid_date = test_date
         df_valid = df_test
 
-    label_cols = [
+    if IS_ADD_LABEL:
+        label_cols = [
+            'is_installed',
+            'is_clicked',
+            'new_label',
+            'f_0',
+            'f_1',
+        ]
+    else:
+        label_cols = [
         'is_installed',
         'is_clicked',
-        'new_label',
         'f_0',
         'f_1',
     ]
