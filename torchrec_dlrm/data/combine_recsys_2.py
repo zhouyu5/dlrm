@@ -14,13 +14,13 @@ import lightgbm as lgb
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 from collections import defaultdict
-from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import brier_score_loss
 from category_encoders import *
 import os
 import sys
 import argparse
 from typing import List
+import pickle
 
 
 def parse_args(argv: List[str]) -> argparse.Namespace:
@@ -65,6 +65,17 @@ def get_train_test_df(input_dir, test_date):
     print('before process shape')
     print(train_df.shape, test_df.shape)
     return train_df, test_df
+
+
+def save_encoder(encoder, save_path):
+    with open(save_path, 'wb') as f:
+        pickle.dump(encoder, f)
+
+
+def load_encoder(load_path):
+    with open(load_path, 'rb') as f:
+        encoder = pickle.load(f)
+    return encoder
 
 
 def get_group_dict():
